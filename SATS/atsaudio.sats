@@ -32,13 +32,13 @@ audio$input{cin >= 0}( &(@[float][cin]) ) : a
 fun {b:t@ype+}{cout:int}
 audio$output{cout >= 0}( b, &(@[float?][cout]) >> @[float][cout] ) : void
 
-datasort senv =
-  | sdyn of (int,t@ype+,vt@ype+)
-  | spure of (int,t@ype+)
+datasort audionode =
+  | audionode_dyn of (int,t@ype+,vt@ype+)
+  | audionode_pure of (int,t@ype+)
 
-datasort proc = 
-  | proc_cons of (senv,proc)
-  | proc_out of (int,t@ype+)
+datasort audioproc = 
+  | audioproc_cons of (audionode,audioproc)
+  | audioproc_out of (int,t@ype+)
 
 #include "./../HATS/atsaudio_infix.hats"
 
@@ -50,34 +50,34 @@ typedef chan5  = @(float,float,float,float,float)
 typedef chan6  = @(float,float,float,float,float,float)
 
 // eg
-//stadef x = sdyn(mono,float) --> spure(stereo) --> OUT(id,int) 
+//stadef x = DYN(mono,float) --> PURE(stereo) --> OUT(id,int) 
 
-datavtype audiograph_state( proc ) =
+datavtype audiograph( audioproc ) =
   | {id:int}{a:t@ype+} 
-    ag_out(OUT(id,a))
-  | {id:int}{a:t@ype+}{sp:proc} 
-    ag_pure( spure(id,a) --> sp ) of audiograph_state( sp ) 
-  | {id:int}{a:t@ype+}{env:vt@ype+}{sp:proc} 
-    ag_dyn( sdyn(id,a,env) --> sp )  of (audiograph_state( sp ),env) 
+    audiograph_out(OUT(id,a))
+  | {id:int}{a:t@ype+}{sp:audioproc} 
+    audiograph_pure( PURE(id,a) --> sp ) of audiograph( sp ) 
+  | {id:int}{a:t@ype+}{env:vt@ype+}{sp:audioproc} 
+    audiograph_dyn( DYN(id,a,env) --> sp )  of (audiograph( sp ),env) 
 
-fun {pr:proc} 
-  audiograph_state_create() : audiograph_state( pr )
+fun {pr:audioproc} 
+  audiograph_create() : audiograph( pr )
 
-fun {pr:proc} 
-  audiograph_state_free( audiograph_state(pr) ) : void
+fun {pr:audioproc} 
+  audiograph_free( audiograph(pr) ) : void
 
-absvt@ype audio(sysin:int,sysout:int, proc)
+absvt@ype audio(sysin:int,sysout:int, audioproc)
 
-fun {p:proc}{cin,cout:int}
+fun {p:audioproc}{cin,cout:int}
 audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout) : audio(cin,cout,p)
 
-fun {p:proc}{cin,cout:int}
+fun {p:audioproc}{cin,cout:int}
 audio_run{cin >= 0; cout >= 0}(!audio(cin,cout,p)) : void
 
-fun {p:proc}{cin,cout:int}
+fun {p:audioproc}{cin,cout:int}
 audio_free{cin >= 0; cout >= 0}( audio(cin,cout,p) ) : void
 
-fun {p:proc}{cin,cout:int}
+fun {p:audioproc}{cin,cout:int}
 audio_process{cin >= 0; cout >= 0}(
   env : &audio(cin,cout,p) 
 ) : void

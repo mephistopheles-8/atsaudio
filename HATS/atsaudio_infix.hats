@@ -8,7 +8,9 @@
 #define _ATSAUDIO_INFIX_HATS
 
 infixr -->
-#define --> proc_cons
-#define OUT proc_out
+#define --> audioproc_cons
+#define OUT audioproc_out
+#define DYN audionode_dyn
+#define PURE audionode_pure
 
 #endif

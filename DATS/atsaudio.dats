@@ -90,44 +90,44 @@ implement (a:t@ype+)
 audio$free<a>( x ) = ()
 
 implement (id,a:t@ype+)
-audiograph_state_create<OUT(id,a)>() = ag_out()
+audiograph_create<OUT(id,a)>() = audiograph_out()
 
 implement (id,sp,a:t@ype+)
-audiograph_state_create<spure(id,a) --> sp>() 
-  = ag_pure(st) where {
-     val st = audiograph_state_create<sp>() 
+audiograph_create<PURE(id,a) --> sp>() 
+  = audiograph_pure(st) where {
+     val st = audiograph_create<sp>() 
      val () = ignoret(5)
   }
 
 implement (id,sp,a:t@ype+,env:vt@ype+)
-audiograph_state_create<sdyn(id,a,env) --> sp>() 
-  = ag_dyn(st,env) where {
-     val st = audiograph_state_create<sp>() 
+audiograph_create<DYN(id,a,env) --> sp>() 
+  = audiograph_dyn(st,env) where {
+     val st = audiograph_create<sp>() 
      val env = audio$init<id><env>() 
   }
 
 implement (id,a:t@ype+)
-audiograph_state_free<OUT(id,a)>( out ) = {
-    val ~ag_out() = out
+audiograph_free<OUT(id,a)>( out ) = {
+    val ~audiograph_out() = out
   }
 
 implement (id,sp,a:t@ype+)
-audiograph_state_free<spure(id,a) --> sp>( out ) = {
-    val ~ag_pure(sp) = out
-    val () = audiograph_state_free<sp>(sp)
+audiograph_free<PURE(id,a) --> sp>( out ) = {
+    val ~audiograph_pure(sp) = out
+    val () = audiograph_free<sp>(sp)
     val () = ignoret(5)
   }
 
 implement (id,sp,a:t@ype+,env:vt@ype+)
-audiograph_state_free<sdyn(id,a,env) --> sp>( out ) = {
-    val ~ag_dyn(sp,env) = out
-    val () = audiograph_state_free<sp>(sp)
+audiograph_free<DYN(id,a,env) --> sp>( out ) = {
+    val ~audiograph_dyn(sp,env) = out
+    val () = audiograph_free<sp>(sp)
     val () = audio$free<env>( env )
   }
 
 local
 absimpl audio(sin,sout,p) = @{
-     state = audiograph_state(p)
+     state = audiograph(p)
    , buffer = matrixptr(float,256,sin + sout)
    , sin   = size_t sin
    , sout   = size_t sout
@@ -136,7 +136,7 @@ in
 implement {p}{cin,cout} 
 audio_init( sin, sout ) 
     = @{
-      state = audiograph_state_create<p>()
+      state = audiograph_create<p>()
     , buffer = matrixptr_make_elt<float>(i2sz(256),sin + sout,0.0f)
     , sin    = sin
     , sout   = sout 
@@ -144,31 +144,31 @@ audio_init( sin, sout )
 
 implement {p}{cin,cout} 
 audio_free( audio )
-  = ( audiograph_state_free<p>(audio.state); 
+  = ( audiograph_free<p>(audio.state); 
       matrixptr_free(audio.buffer);
     )
 
 extern 
-fun {p:proc}{cin,cout:int}
-audio_process$run{cin >= 0; cout >= 0}( !audiograph_state(p), &(@[float][cin]), &(@[float?][cout]) >> @[float][cout] ) 
+fun {p:audioproc}{cin,cout:int}
+audio_process$run{cin >= 0; cout >= 0}( !audiograph(p), &(@[float][cin]), &(@[float?][cout]) >> @[float][cout] ) 
   : void 
 
 extern 
-fun {p:proc}{a:vt@ype+}{cout:int}
-audio_process$step{cout >= 0}( !audiograph_state(p), a, &(@[float?][cout]) >> @[float][cout] ) 
+fun {p:audioproc}{a:vt@ype+}{cout:int}
+audio_process$step{cout >= 0}( !audiograph(p), a, &(@[float?][cout]) >> @[float][cout] ) 
   : void 
 
 implement (id,cin,cout,sp,a:t@ype+)
-audio_process$run<spure(id,a) --> sp><cin,cout>( ag, arrin, arrout ) = {
-    val ag_pure(sp) = ag 
+audio_process$run<PURE(id,a) --> sp><cin,cout>( ag, arrin, arrout ) = {
+    val audiograph_pure(sp) = ag 
     val x = audio$input<id><a><cin>( arrin )
     val x0 = audio$process<id><a,a>( x )
     val () = audio_process$step<sp><a><cout>( sp, x0, arrout )
   }
 
 implement (id,cin,cout,sp,a:t@ype+,env:vt@ype+)
-audio_process$run<sdyn(id,a,env) --> sp><cin,cout>( ag, arrin, arrout ) = {
-    val @ag_dyn(sp,env0) = ag 
+audio_process$run<DYN(id,a,env) --> sp><cin,cout>( ag, arrin, arrout ) = {
+    val @audiograph_dyn(sp,env0) = ag 
     val x = audio$input<id><a><cin>( arrin )
     val x0 = audio$processR<id><a,a><env>( x, env0 )
     val () = audio_process$step<sp><a><cout>( sp, x0, arrout )
@@ -177,23 +177,23 @@ audio_process$run<sdyn(id,a,env) --> sp><cin,cout>( ag, arrin, arrout ) = {
 
 implement (id,cin,cout,a:t@ype+)
 audio_process$run<OUT(id,a)><cin,cout>( ag, arrin, arrout ) = {
-    val ag_out() = ag 
+    val audiograph_out() = ag 
     val x = audio$input<id><a><cin>( arrin )
     val x0 = audio$process<id><a,a>( x )
     val () = audio$output<a><cout>(x0,arrout)
   }
 
 implement (id,cin,cout,sp,a:t@ype+,b:t@ype+)
-audio_process$step<spure(id,b) --> sp><a><cout>( ag, x, arrout ) = {
-    val ag_pure(sp) = ag 
+audio_process$step<PURE(id,b) --> sp><a><cout>( ag, x, arrout ) = {
+    val audiograph_pure(sp) = ag 
     val y = audio$process<id><a,b>( x )
     val () = audio_process$step<sp><b><cout>( sp, y, arrout )
     val () = ignoret(0)
   }
 
 implement (id,cin,cout,sp,a:t@ype+,b:t@ype+,env:vt@ype+)
-audio_process$step<sdyn(id,b,env) --> sp><a><cout>( ag, x, arrout ) = {
-    val @ag_dyn(sp,env0) = ag 
+audio_process$step<DYN(id,b,env) --> sp><a><cout>( ag, x, arrout ) = {
+    val @audiograph_dyn(sp,env0) = ag 
     val y = audio$processR<id><a,b>( x, env0 )
     val () = audio_process$step<sp><b><cout>( sp, y, arrout )
     prval () = fold@ag
@@ -202,7 +202,7 @@ audio_process$step<sdyn(id,b,env) --> sp><a><cout>( ag, x, arrout ) = {
 
 implement (id,cin,cout,a:t@ype+,b:t@ype+)
 audio_process$step<OUT(id,b)><a><cout>( ag, x, arrout ) = {
-    val ag_out() = ag 
+    val audiograph_out() = ag 
     val y = audio$process<id><a,b>( x )
     val () = audio$output<b><cout>(y,arrout)
   }
@@ -214,7 +214,7 @@ audio_process( audio ) = {
       val p = matrixptr2ptr( audio.buffer ) 
       prval pf = matrixptr_takeout( audio.buffer )
 
-      vtypedef env = @(size_t cin, size_t cout, audiograph_state(p))
+      vtypedef env = @(size_t cin, size_t cout, audiograph(p))
 
       var env0 : env = @(audio.sin, audio.sout, audio.state)
 
