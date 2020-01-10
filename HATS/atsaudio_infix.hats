@@ -12,5 +12,11 @@ infixr -->
 #define OUT audioproc_out
 #define DYN audionode_dyn
 #define PURE audionode_pure
+#define PAR audionode_par
+
+infixr :::
+#define ::: audioproc_list_cons 
+#define apnil audioproc_list_nil 
+
 
 #endif

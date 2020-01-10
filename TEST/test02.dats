@@ -20,20 +20,36 @@ end
 implement
 main0 ( ) 
   = println!("Hello [test02]") where {
-      stadef p = PURE(0,stereo) --> DYN(0,mono,float) --> OUT(0,stereo)
+      stadef sum = 1
+      stadef times_two = 2
+      stadef plus_five = 3
+      stadef increment = 4
+      stadef p 
+          = PURE(0,stereo) 
+            --> DYN(increment,mono,float) 
+            --> PAR(sum,mono, OUT(times_two,mono) ::: OUT(plus_five,mono) ::: apnil)
+            --> OUT(0,stereo)
  
+
+      implement
+      audio$accumF<sum><mono,mono>( x, y ) = y + x
+      implement
+      audio$process<times_two><mono,mono>( x ) = x*2.0f 
+      implement
+      audio$process<plus_five><mono,mono>( x ) = x + 5.0f 
+
       var audio0 : audio(0,2,p)
         = audio_init<p><0,2>( i2sz(0), i2sz(2) )
           where {
             implement
-            audio$init<0><float>( ) = ~1.0f 
+            audio$init<increment><float>( ) = 0.0f 
           }
          
 
       val () = audio_process<p><0,2>( audio0 ) 
         where {
-          implement
-          audio$processR<0><stereo,mono><float>( st, env ) = (env := env + 1.0f; env) 
+          implement (a)
+          audio$processF<increment><a,mono><float>( st, env ) = @(env,env + 1) 
           implement
           audio$process<0><mono,stereo>( m ) = @(m,m)
         }

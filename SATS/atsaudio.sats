@@ -32,11 +32,25 @@ audio$input{cin >= 0}( &(@[float][cin]) ) : a
 fun {b:t@ype+}{cout:int}
 audio$output{cout >= 0}( b, &(@[float?][cout]) >> @[float][cout] ) : void
 
+(** Accumulators (for parallel signals) **)
+
+fun {id:int}{a,b:t@ype+}
+audio$accumR( a, &b >> _ ) : void
+
+fun {id:int}{a,b:t@ype+}
+audio$accumF( a, b ) : b
+
+
 datasort audionode =
   | audionode_dyn of (int,t@ype+,vt@ype+)
   | audionode_pure of (int,t@ype+)
+  | audionode_par of (int,t@ype+,audioproc_list) (** id, accumulator type, par list **)
 
-datasort audioproc = 
+and audioproc_list =
+  | audioproc_list_nil
+  | audioproc_list_cons of (audioproc, audioproc_list)
+
+and audioproc = 
   | audioproc_cons of (audionode,audioproc)
   | audioproc_out of (int,t@ype+)
 
@@ -56,15 +70,33 @@ datavtype audiograph( audioproc ) =
   | {id:int}{a:t@ype+} 
     audiograph_out(OUT(id,a))
   | {id:int}{a:t@ype+}{sp:audioproc} 
-    audiograph_pure( PURE(id,a) --> sp ) of audiograph( sp ) 
+    audiograph_pure( PURE(id,a) --> sp ) 
+      of audiograph( sp ) 
   | {id:int}{a:t@ype+}{env:vt@ype+}{sp:audioproc} 
-    audiograph_dyn( DYN(id,a,env) --> sp )  of (audiograph( sp ),env) 
+    audiograph_dyn( DYN(id,a,env) --> sp )  
+      of (audiograph( sp ),env)
+  | {id:int}{a:t@ype+}{xs:audioproc_list}{sp:audioproc}
+    audiograph_par( PAR(id,a,xs) --> sp ) 
+      of ( audiograph(sp), audiograph_list( xs ) )
+ 
+and audiograph_list(audioproc_list) =
+  | audiograph_list_nil( apnil )
+  | {ap:audioproc}{xs:audioproc_list}
+    audiograph_list_cons( ap ::: xs )
+      of ( audiograph(ap), audiograph_list(xs) ) 
+
 
 fun {pr:audioproc} 
   audiograph_create() : audiograph( pr )
 
+fun {xs:audioproc_list} 
+  audiograph_list_create() : audiograph_list( xs )
+
 fun {pr:audioproc} 
   audiograph_free( audiograph(pr) ) : void
+
+fun {xs:audioproc_list} 
+  audiograph_list_free( audiograph_list( xs ) ) : void
 
 absvt@ype audio(sysin:int,sysout:int, audioproc)
 
