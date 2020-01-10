@@ -13,6 +13,7 @@ infixr -->
 #define DYN audionode_dyn
 #define PURE audionode_pure
 #define PAR audionode_par
+#define REC audionode_rec
 
 infixr :::
 #define ::: audioproc_list_cons 

@@ -40,11 +40,15 @@ audio$accumR( a, &b >> _ ) : void
 fun {id:int}{a,b:t@ype+}
 audio$accumF( a, b ) : b
 
+(** For recursive signals **)
+fun {id:int}{a,b:t@ype+}
+audio$into( a ) : b
 
 datasort audionode =
   | audionode_dyn of (int,t@ype+,vt@ype+)
   | audionode_pure of (int,t@ype+)
   | audionode_par of (int,t@ype+,audioproc_list) (** id, accumulator type, par list **)
+  | audionode_rec of (int,t@ype+,t@ype+,audioproc) (** id, audioproc out, process out, audioproc **)
 
 and audioproc_list =
   | audioproc_list_nil
@@ -78,6 +82,9 @@ datavtype audiograph( audioproc ) =
   | {id:int}{a:t@ype+}{xs:audioproc_list}{sp:audioproc}
     audiograph_par( PAR(id,a,xs) --> sp ) 
       of ( audiograph(sp), audiograph_list( xs ) )
+  | {id:int}{a,b:t@ype+}{sp0,sp1:audioproc}
+    audiograph_rec( REC(id,a,b,sp0) --> sp1 ) 
+      of ( audiograph(sp1), a, audiograph( sp0 ) )
  
 and audiograph_list(audioproc_list) =
   | audiograph_list_nil( apnil )

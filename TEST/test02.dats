@@ -24,17 +24,26 @@ main0 ( )
       stadef times_two = 2
       stadef plus_five = 3
       stadef increment = 4
+      stadef rec_test = 5
+      stadef plus_one = 6
       stadef p 
-          = PURE(0,stereo) 
+          = PURE(0,mono)
             --> DYN(increment,mono,float) 
             --> PAR(sum,mono, OUT(times_two,mono) ::: OUT(plus_five,mono) ::: apnil)
+            --> REC(rec_test,mono, mono, OUT(plus_one,mono))
             --> OUT(0,stereo)
  
 
       implement
       audio$accumF<sum><mono,mono>( x, y ) = y + x
+
+      implement
+      audio$process<rec_test><(@(mono,mono)),mono>( x ) = x.0 + x.1
+
       implement
       audio$process<times_two><mono,mono>( x ) = x*2.0f 
+      implement
+      audio$process<plus_one><mono,mono>( x ) = x + 1.0f
       implement
       audio$process<plus_five><mono,mono>( x ) = x + 5.0f 
 
