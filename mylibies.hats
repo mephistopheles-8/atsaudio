@@ -9,6 +9,7 @@
 
 staload "./SATS/atsaudio.sats"
 staload _ = "./DATS/atsaudio.dats"
+staload _ = "./DATS/atsaudio_dummy.dats"
 
 #include "./HATS/atsaudio_infix.hats"
 

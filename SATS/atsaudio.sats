@@ -106,6 +106,8 @@ fun {xs:audioproc_list}
   audiograph_list_free( audiograph_list( xs ) ) : void
 
 absvt@ype audio(sysin:int,sysout:int, audioproc)
+absvtype audio_io(sysin:int,sysout:int) = ptr
+
 
 fun {p:audioproc}{cin,cout:int}
 audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout) : audio(cin,cout,p)
@@ -115,6 +117,36 @@ audio_run{cin >= 0; cout >= 0}(!audio(cin,cout,p)) : void
 
 fun {p:audioproc}{cin,cout:int}
 audio_free{cin >= 0; cout >= 0}( audio(cin,cout,p) ) : void
+
+fun {} 
+audio_io_init{cin,cout:nat}(size_t cin, size_t cout) : audio_io(cin,cout)
+fun {}
+audio_io_free{cin,cout:nat}(audio_io(cin,cout)) : void
+
+fun {}
+audio_io_blocksize{cin,cout:nat}( aio: !audio_io(cin,cout) ) : [bsz:nat] size_t bsz
+fun {}
+audio_io_sample_rate{cin,cout:nat}( aio: !audio_io(cin,cout) ) : [sr:nat] size_t sr
+
+fun {}
+audio_io_process_beg{cin,cout:nat}( aio: !audio_io(cin,cout) ) : void
+fun {}
+audio_io_process_end{cin,cout:nat}( aio: !audio_io(cin,cout) ) : void
+
+(** I don't know if it's best to write in large blocks here, or write per-sample;
+    writing the block is O(3*t) and writing samples is O(t), however writing the block
+    may still be better optimized.
+ **)
+fun {}
+audio_io_sample_in{cin,cout:nat}( aio: !audio_io(cin,cout), buf: &(@[float?][cin]) >> @[float][cin] ) : void
+fun {}
+audio_io_sample_out{cin,cout:nat}( aio: !audio_io(cin,cout), buf: &(@[float][cout])) : void
+
+fun {}
+audio_io_samples_in{cin,cout:nat}{t:nat}( aio: !audio_io(cin,cout), buf: !matrixptr(float,t,cin + cout), size_t t ) : void
+fun {}
+audio_io_samples_out{cin,cout:nat}{t:nat}( aio: !audio_io(cin,cout), buf: !matrixptr(float,t,cin + cout), size_t t ) : void
+
 
 fun {p:audioproc}{cin,cout:int}
 audio_process{cin >= 0; cout >= 0}(

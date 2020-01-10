@@ -204,6 +204,7 @@ absimpl audio(sin,sout,p) = @{
    , buffer = matrixptr(float,256,sin + sout)
    , sin   = size_t sin
    , sout   = size_t sout
+   , io     = audio_io(sin,sout)
   }
 in
 implement {p}{cin,cout} 
@@ -212,13 +213,15 @@ audio_init( sin, sout )
       state = audiograph_create<p>()
     , buffer = matrixptr_make_elt<float>(i2sz(256),sin + sout,0.0f)
     , sin    = sin
-    , sout   = sout 
+    , sout   = sout
+    , io     = audio_io_init(sin, sout) 
     }  
 
 implement {p}{cin,cout} 
 audio_free( audio )
   = ( audiograph_free<p>(audio.state); 
       matrixptr_free(audio.buffer);
+      audio_io_free(audio.io);
     )
 
 extern 
@@ -411,10 +414,11 @@ audio_process( audio ) = {
       val p = matrixptr2ptr( audio.buffer ) 
       prval pf = matrixptr_takeout( audio.buffer )
 
-      vtypedef env = @(size_t cin, size_t cout, audiograph(p))
+      vtypedef env = @(size_t cin, size_t cout, audiograph(p), audio_io(cin,cout))
 
-      var env0 : env = @(audio.sin, audio.sout, audio.state)
+      val () = audio_io_process_beg(audio.io)
 
+      var env0 : env = @(audio.sin, audio.sout, audio.state, audio.io)
       val () = matrix_foreachrow_env<float><env>( !p, i2sz(256), audio.sin + audio.sout, env0 )
           where {
             implement matrix_foreachrow$fwork<float><env>( arr, n, env ) 
@@ -426,15 +430,20 @@ audio_process( audio ) = {
                     val p0 = addr@arr
                     val p1 = ptr_add<float>(p0,env.0)
 
+                    val () = audio_io_sample_in( env.3, !p0 )
+
                     val () = audio_process$run<p><cin,cout>( env.2, !p0, !p1 )
+
+                    val () = audio_io_sample_out( env.3, !p1 )
  
                     prval pv = array_v_unsplit( pa0, pa1 ) 
                     prval () = view@arr := pv
                  in
                 end
           }
-
+      val () = audio_io_process_end(env0.3)
       val () = audio.state := env0.2
+      val () = audio.io := env0.3
       prval () = matrixptr_addback( pf | audio.buffer  )
   }
 end
