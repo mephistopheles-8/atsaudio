@@ -29,6 +29,8 @@ implement (id)
 audio$init<id><chan5>( ) = @(0.0f,0.0f,0.0f,0.0f,0.0f) 
 implement (id)
 audio$init<id><chan6>( ) = @(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f) 
+implement (id)
+audio$init<id><bool>( ) = false 
 
 
 implement (id,a:t@ype+)
@@ -136,6 +138,14 @@ audiograph_create<REC(id,a,b,sp0) --> sp1>()
      val x   = audio$init<id><a>() 
   }
 
+implement (id,a:t@ype+,sp0,sp1,sp2)
+audiograph_create<IF(id,a,sp0,sp1) --> sp2>() 
+  = audiograph_if(sp2,sp0,sp1) where {
+     val sp0 = audiograph_create<sp0>()
+     val sp1 = audiograph_create<sp1>()
+     val sp2 = audiograph_create<sp2>()
+  }
+
 implement 
 audiograph_list_create<apnil>() = audiograph_list_nil()
 
@@ -181,6 +191,16 @@ audiograph_free<REC(id,a,b,sp0) --> sp1>( out ) = {
     (** avoid TCO **)
     val () = audiograph_free<sp0>(sp0) 
     val () = audiograph_free<sp1>(sp1) 
+    val () = ignoret(5)
+  }
+
+implement (id,a:t@ype+,sp0,sp1,sp2)
+audiograph_free<IF(id,a,sp0,sp1) --> sp2>( out ) = {
+    val ~audiograph_if(sp2,sp0,sp1) = out
+    (** avoid TCO **)
+    val () = audiograph_free<sp0>(sp0) 
+    val () = audiograph_free<sp1>(sp1) 
+    val () = audiograph_free<sp2>(sp2) 
     val () = ignoret(5)
   }
 
@@ -286,6 +306,22 @@ audio_process$run<REC(id,a,b,sp0) --> sp1><cin,cout>( ag, arrin, arrout ) = {
     prval () = fold@ag
   }
 
+implement (id,cin,cout,sp0,sp1,sp2,a:t@ype+)
+audio_process$run<IF(id,a,sp0,sp1) --> sp2><cin,cout>( ag, arrin, arrout ) = {
+    val audiograph_if(sp2,sp0,sp1) = ag 
+    var x : a = audio$input<id><a><cin>( arrin )
+    val () = (
+        if audio$cond<id><a>( x )
+        then audio_process$fold$accum<id><sp0><a,a>( sp0, x, x )
+        else audio_process$fold$accum<id><sp1><a,a>( sp1, x, x )
+      ) where {
+            implement (a:t@ype+,b:t@ype+)
+            audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
+        }
+    
+    val () = audio_process$step<sp2><a><cout>( sp2, x, arrout )
+  }
+
 implement (id,cin,cout,a:t@ype+)
 audio_process$run<OUT(id,a)><cin,cout>( ag, arrin, arrout ) = {
     val audiograph_out() = ag 
@@ -335,6 +371,24 @@ audio_process$step<REC(id,b,c,sp0) --> sp1><a><cout>( ag, x, arrout ) = {
             audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
       }
     prval () = fold@ag
+  }
+
+implement (id,cout,sp0,sp1,sp2,a:t@ype+,b:t@ype+)
+audio_process$step<IF(id,b,sp0,sp1) --> sp2><a><cout>( ag, x, arrout ) = {
+    val audiograph_if(sp2,sp0,sp1) = ag
+    var y : b = audio$init<id><b>() 
+    val () = (
+        if audio$cond<id><a>( x )
+        then audio_process$fold$accum<id><sp0><a,b>( sp0, x, y )
+        else audio_process$fold$accum<id><sp1><a,b>( sp1, x, y )
+      ) where {
+            implement (a:t@ype+,b:t@ype+)
+            audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
+        }
+    
+    (** avoid TCO **)
+    val () = audio_process$step<sp2><b><cout>( sp2, y, arrout )
+    val () = ignoret(0)
   }
 
 implement (id,cout,a:t@ype+,b:t@ype+)
@@ -387,6 +441,25 @@ audio_process$fold$accum<fid><REC(id,b,c,sp0) --> sp1><a,d>( ag, x, y ) = {
     val () = ignoret(0)
     prval () = fold@ag
   }
+
+implement (fid,id,cout,sp0,sp1,sp2,a:t@ype+,b:t@ype+,c:t@ype+)
+audio_process$fold$accum<fid><IF(id,b,sp0,sp1) --> sp2><a,c>( ag, x, y ) = {
+    val audiograph_if(sp2,sp0,sp1) = ag
+    var z : b = audio$init<id><b>() 
+    val () = (
+        if audio$cond<id><a>( x )
+        then audio_process$fold$accum<id><sp0><a,b>( sp0, x, z )
+        else audio_process$fold$accum<id><sp1><a,b>( sp1, x, z )
+      ) where {
+            implement (a:t@ype+,b:t@ype+)
+            audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
+        }
+   
+    (** Avoid TCO **) 
+    val () = audio_process$fold$accum<fid><sp2><b,c>( sp2, z, y )
+    val () = ignoret(0)
+  }
+
 
 implement (fid,id,cout,a:t@ype+,b:t@ype+,c:t@ype+)
 audio_process$fold$accum<fid><OUT(id,b)><a,c>( ag, x, y ) = {

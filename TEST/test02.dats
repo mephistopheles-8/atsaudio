@@ -26,11 +26,13 @@ main0 ( )
       stadef increment = 4
       stadef rec_test = 5
       stadef plus_one = 6
+      stadef mycond = 7
       stadef p 
           = PURE(0,mono)
             --> DYN(increment,mono,float) 
             --> PAR(sum,mono, OUT(times_two,mono) ::: OUT(plus_five,mono) ::: apnil)
             --> REC(rec_test,mono, mono, OUT(plus_one,mono))
+            --> IF(mycond,mono,OUT(plus_one,mono), OUT(plus_five,mono))
             --> OUT(0,stereo)
  
 
@@ -41,11 +43,15 @@ main0 ( )
       audio$process<rec_test><(@(mono,mono)),mono>( x ) = x.0 + x.1
 
       implement
+      audio$cond<mycond><mono>( x ) = x > 20000.0f
+
+      implement
       audio$process<times_two><mono,mono>( x ) = x*2.0f 
       implement
       audio$process<plus_one><mono,mono>( x ) = x + 1.0f
       implement
       audio$process<plus_five><mono,mono>( x ) = x + 5.0f 
+
 
       var audio0 : audio(0,2,p)
         = audio_init<p><0,2>( i2sz(0), i2sz(2) )

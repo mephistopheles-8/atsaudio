@@ -14,6 +14,7 @@ infixr -->
 #define PURE audionode_pure
 #define PAR audionode_par
 #define REC audionode_rec
+#define IF  audionode_if
 
 infixr :::
 #define ::: audioproc_list_cons 

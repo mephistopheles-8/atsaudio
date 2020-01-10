@@ -41,14 +41,22 @@ fun {id:int}{a,b:t@ype+}
 audio$accumF( a, b ) : b
 
 (** For recursive signals **)
+
 fun {id:int}{a,b:t@ype+}
 audio$into( a ) : b
 
+(** For conditional signals **)
+
+fun {id:int}{a:t@ype+}
+audio$cond( a ) : bool
+
+
 datasort audionode =
-  | audionode_dyn of (int,t@ype+,vt@ype+)
-  | audionode_pure of (int,t@ype+)
+  | audionode_dyn of (int,t@ype+,vt@ype+) (** id, process out, env **)
+  | audionode_pure of (int,t@ype+)        (** id, process out **)
   | audionode_par of (int,t@ype+,audioproc_list) (** id, accumulator type, par list **)
   | audionode_rec of (int,t@ype+,t@ype+,audioproc) (** id, audioproc out, process out, audioproc **)
+  | audionode_if  of (int, t@ype+,audioproc, audioproc ) (** id, proc out, if proc, else proc **)
 
 and audioproc_list =
   | audioproc_list_nil
@@ -85,6 +93,9 @@ datavtype audiograph( audioproc ) =
   | {id:int}{a,b:t@ype+}{sp0,sp1:audioproc}
     audiograph_rec( REC(id,a,b,sp0) --> sp1 ) 
       of ( audiograph(sp1), a, audiograph( sp0 ) )
+  | {id:int}{a:t@ype+}{sp0,sp1,sp2:audioproc}
+    audiograph_if( IF(id,a,sp0,sp1) --> sp2 ) 
+      of ( audiograph(sp2), audiograph( sp0 ), audiograph(sp1) )
  
 and audiograph_list(audioproc_list) =
   | audiograph_list_nil( apnil )
