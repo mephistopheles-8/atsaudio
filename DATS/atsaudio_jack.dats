@@ -279,7 +279,7 @@ audio_io_sample_out{cin,cout}(aio, buf) = {
 fun {p:audioproc}{cin,cout:int}
 audio_jack_process{cin >= 0; cout >= 0}( nf: jack_nframes_t, audio: &audio(cin,cout,p) ) 
     : int = 0 where {
-    val () =  audio_process<p><cin,cout>( audio )
+    val () =  audio_process<p><cin,cout>( audio, $UNSAFE.castvwtp0{[t:nat] size_t t}(nf) )
   } 
 
 implement {proc}{cin,cout} 

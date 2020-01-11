@@ -14,15 +14,15 @@ fun {env:vt@ype+}
 
 (** Process pure **)
 fun {id:int}{a,b:t@ype+}
-audio$process( a ) : b
+audio$process{sr:nat}( a, size_t sr ) : b
 
 (** Functional style; may involve more copying with larger state **)
 fun {id:int}{a,b:t@ype+}{env:vt@ype+}
-audio$processF( a, env ) : @(b,env)
+audio$processF{sr:nat}( a, size_t sr, env ) : @(b,env)
 
 (** Call-by-reference style **)
 fun {id:int}{a,b:t@ype+}{env:vt@ype+}
-audio$processR( a, &env >> _ ) : b
+audio$processR{sr:nat}( a, size_t sr, &env >> _ ) : b
 
 (** to define processes in nice types, like tuples **)
 
@@ -165,7 +165,7 @@ audio_io_samples_out{cin,cout:nat}{t:nat}( aio: !audio_io(cin,cout), buf: !matri
 
 
 fun {p:audioproc}{cin,cout:int}
-audio_process{cin >= 0; cout >= 0}(
-  env : &audio(cin,cout,p) 
+audio_process{cin >= 0; cout >= 0}{t:nat}(
+  env : &audio(cin,cout,p), size_t t 
 ) : void
 

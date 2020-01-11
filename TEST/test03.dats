@@ -19,7 +19,7 @@ main0 ( )
       stadef p  = OUT(random,mono)
 
       implement
-      audio$process<random><mono,mono>( x ) 
+      audio$process<random><mono,mono>( x, sr ) 
         = $UNSAFE.cast{float}(random()) / $UNSAFE.cast{float}(RAND_MAX) 
 
       var audio0 : audio(0,1,p)
