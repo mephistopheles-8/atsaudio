@@ -22,8 +22,9 @@ main0 ( )
       audio$process<random><mono,mono>( x, sr ) 
         = $UNSAFE.cast{float}(random()) / $UNSAFE.cast{float}(RAND_MAX) 
 
+      var env : int = 0
       var audio0 : audio(0,1,p)
-        = audio_init<p><0,1>( i2sz(0), i2sz(1) )
+        = audio_init<p><0,1>( i2sz(0), i2sz(1), env )
 
       val () = audio_run<p><0,1> ( audio0 )
       val _ = sleep(5)

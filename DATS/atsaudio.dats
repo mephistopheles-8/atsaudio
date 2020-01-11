@@ -32,6 +32,8 @@ audio$init<id><chan6>( ) = @(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
 implement (id)
 audio$init<id><bool>( ) = false 
 
+implement (id,a:t@ype+,env:vt@ype+)
+audio$init_env<id><env,a>( env )  = audio$init<id><a>()
 
 implement (id,a:t@ype+)
 audio$input<id><a><0>( inp ) = audio$init<id><a>()
@@ -107,60 +109,60 @@ audio$accumR<id><a,b>( x, y ) = {
 implement (a:t@ype+)
 audio$free<a>( x ) = ()
 
-implement (id,a:t@ype+)
-audiograph_create<OUT(id,a)>() = audiograph_out()
-
-implement (id,sp,a:t@ype+)
-audiograph_create<PURE(id,a) --> sp>() 
-  = audiograph_pure(st) where {
-     val st = audiograph_create<sp>() 
-  }
+implement (id,a:t@ype+,env:vt@ype+)
+audiograph_create<OUT(id,a)><env>( env ) = audiograph_out()
 
 implement (id,sp,a:t@ype+,env:vt@ype+)
-audiograph_create<DYN(id,a,env) --> sp>() 
-  = audiograph_dyn(st,env) where {
-     val st = audiograph_create<sp>() 
-     val env = audio$init<id><env>() 
+audiograph_create<PURE(id,a) --> sp><env>( env ) 
+  = audiograph_pure(st) where {
+     val st = audiograph_create<sp>( env ) 
   }
 
-implement (id,a:t@ype+,xs,sp)
-audiograph_create<PAR(id,a,xs) --> sp>() 
+implement (id,sp,a:t@ype+,b:vt@ype+,env:vt@ype+)
+audiograph_create<DYN(id,a,b) --> sp><env>( env ) 
+  = audiograph_dyn(st,env0) where {
+     val st = audiograph_create<sp>( env ) 
+     val env0 = audio$init_env<id><env,b>( env ) 
+  }
+
+implement (id,a:t@ype+,xs,sp,env:vt@ype+)
+audiograph_create<PAR(id,a,xs) --> sp><env>( env ) 
   = audiograph_par(sp,xs) where {
-     val sp = audiograph_create<sp>()
-     val xs = audiograph_list_create<xs>() 
+     val sp = audiograph_create<sp>( env )
+     val xs = audiograph_list_create<xs>( env ) 
   }
 
-implement (id,a:t@ype+,sp0,sp1)
-audiograph_create<SING(id,a,sp0) --> sp1>() 
+implement (id,a:t@ype+,sp0,sp1,env:vt@ype+)
+audiograph_create<SING(id,a,sp0) --> sp1><env>( env ) 
   = audiograph_sing(sp1,sp0) where {
-     val sp0 = audiograph_create<sp0>()
-     val sp1 = audiograph_create<sp1>()
+     val sp0 = audiograph_create<sp0>( env )
+     val sp1 = audiograph_create<sp1>( env )
   }
 
-implement (id,a:t@ype+,b:t@ype+,sp0,sp1)
-audiograph_create<REC(id,a,b,sp0) --> sp1>() 
+implement (id,a:t@ype+,b:t@ype+,sp0,sp1,env:vt@ype+)
+audiograph_create<REC(id,a,b,sp0) --> sp1><env>( env ) 
   = audiograph_rec(sp1,x,sp0) where {
-     val sp0 = audiograph_create<sp0>()
-     val sp1 = audiograph_create<sp1>()
-     val x   = audio$init<id><a>() 
+     val sp0 = audiograph_create<sp0>( env )
+     val sp1 = audiograph_create<sp1>( env )
+     val x   = audio$init<id><a>( ) 
   }
 
-implement (id,a:t@ype+,sp0,sp1,sp2)
-audiograph_create<IF(id,a,sp0,sp1) --> sp2>() 
+implement (id,a:t@ype+,sp0,sp1,sp2,env:vt@ype+)
+audiograph_create<IF(id,a,sp0,sp1) --> sp2><env>( env ) 
   = audiograph_if(sp2,sp0,sp1) where {
-     val sp0 = audiograph_create<sp0>()
-     val sp1 = audiograph_create<sp1>()
-     val sp2 = audiograph_create<sp2>()
+     val sp0 = audiograph_create<sp0>( env )
+     val sp1 = audiograph_create<sp1>( env )
+     val sp2 = audiograph_create<sp2>( env )
   }
 
-implement 
-audiograph_list_create<apnil>() = audiograph_list_nil()
+implement (env:vt@ype+) 
+audiograph_list_create<apnil><env>(env) = audiograph_list_nil()
 
-implement (ap,xs) 
-audiograph_list_create< ap ::: xs  >() 
+implement (ap,xs,env:vt@ype+) 
+audiograph_list_create< ap ::: xs  ><env>( env ) 
   = audiograph_list_cons(ag,xs) where {
-      val ag = audiograph_create<ap>()
-      val xs = audiograph_list_create<xs>()
+      val ag = audiograph_create<ap>( env )
+      val xs = audiograph_list_create<xs>( env )
   }
 
 implement (id,a:t@ype+)
@@ -243,10 +245,10 @@ absimpl audio(sin,sout,p) = @{
    , io     = audio_io(sin,sout)
   }
 in
-implement {p}{cin,cout} 
-audio_init( sin, sout ) 
+implement {p}{cin,cout}{env} 
+audio_init( sin, sout, env ) 
     = @{
-      state = audiograph_create<p>()
+      state = audiograph_create<p>(env)
     , buffer = arrayptr_make_elt<float>(sin + sout,0.0f)
     , sin    = sin
     , sout   = sout

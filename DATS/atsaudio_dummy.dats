@@ -22,7 +22,7 @@ audio_io_process_end(aio) = ()
 implement {}
 audio_io_blocksize(aio) = i2sz(256)
 implement {}
-audio_io_sample_rate(aio) = i2sz(44500)
+audio_io_sample_rate(aio) = i2sz(44100)
 implement {}
 audio_io_sample_in(aio, buf) = ()
   where {

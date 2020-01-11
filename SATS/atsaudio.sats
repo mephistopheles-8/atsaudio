@@ -6,8 +6,17 @@
 *)
 #include "./../HATS/project.hats"
 
-fun {id:int}{env:vt@ype+}
-  audio$init() : env
+fun {id:int}{b:vt@ype+}
+  audio$init() : b
+
+(** We allow the initialization of DYN nodes to be constructed
+    with some initial state 
+    This way, DYN nodes can be wired to the external world
+
+    This defaults to `audio$init`
+**)
+fun {id:int}{env,b:vt@ype+}
+  audio$init_env(&env >> _) : b
 
 fun {env:vt@ype+}
   audio$free( env ) : void
@@ -20,23 +29,45 @@ audio$process{sr:nat}( a, size_t sr ) : b
 fun {id:int}{a,b:t@ype+}{env:vt@ype+}
 audio$processF{sr:nat}( a, size_t sr, env ) : @(b,env)
 
-(** Call-by-reference style **)
+(** Call-by-reference style; this defaults to `audio$processF` **)
 fun {id:int}{a,b:t@ype+}{env:vt@ype+}
 audio$processR{sr:nat}( a, size_t sr, &env >> _ ) : b
 
-(** to define processes in nice types, like tuples **)
+(** This takes the input array and returns a value of type a 
+    For the first node of the sequence, this is assumed to be
+    the process return type
+    
+    Defaults are defined if a is a tuple and cin is equal to 
+    the number of values
+    eg., 
+    a      | cin
+    ------------
+    mono   |  1
+    stereo |  2
+    chan3  |  3
+    ...
+    etc.
+
+**)
 
 fun {id:int}{a:t@ype+}{cin:int}
 audio$input{cin >= 0}( &(@[float][cin]) ) : a
+
+(** With final type `b`, write to the array.
+    Defaults are defined if `b` is a tuple and 
+    `cout` is equal to the number of values (see `audio$input`) 
+**) 
 
 fun {b:t@ype+}{cout:int}
 audio$output{cout >= 0}( b, &(@[float?][cout]) >> @[float][cout] ) : void
 
 (** Accumulators (for parallel signals) **)
 
+(** Call by reference accumulator: defaults to `audio$accumF` **)
 fun {id:int}{a,b:t@ype+}
 audio$accumR( a, &b >> _ ) : void
 
+(** Functional accumulator; may involve more copying with larger state **)
 fun {id:int}{a,b:t@ype+}
 audio$accumF( a, b ) : b
 
@@ -108,11 +139,11 @@ and audiograph_list(audioproc_list) =
       of ( audiograph(ap), audiograph_list(xs) ) 
 
 
-fun {pr:audioproc} 
-  audiograph_create() : audiograph( pr )
+fun {pr:audioproc}{env: vt@ype+} 
+  audiograph_create( &env >> _ ) : audiograph( pr )
 
-fun {xs:audioproc_list} 
-  audiograph_list_create() : audiograph_list( xs )
+fun {xs:audioproc_list}{env: vt@ype+} 
+  audiograph_list_create( &env >> _ ) : audiograph_list( xs )
 
 fun {pr:audioproc} 
   audiograph_free( audiograph(pr) ) : void
@@ -125,8 +156,8 @@ absvt@ype audioout(sysin:int,sysout:int, p:audioproc) = audio(sysin,sysout,p)
 absvtype audio_io(sysin:int,sysout:int) = ptr
 
 
-fun {p:audioproc}{cin,cout:int}
-audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout) : audio(cin,cout,p)
+fun {p:audioproc}{cin,cout:int}{env:vt@ype+}
+audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout, &env >> _) : audio(cin,cout,p)
 
 fun {p:audioproc}{cin,cout:int}
 audio_run{cin >= 0; cout >= 0}(&audio(cin,cout,p)) : void

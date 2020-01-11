@@ -60,10 +60,11 @@ main0 ( )
 
 
       var audio0 : audio(0,2,p)
-        = audio_init<p><0,2>( i2sz(0), i2sz(2) )
+        = audio_init<p><0,2><int>( i2sz(0), i2sz(2), x )
           where {
             implement
-            audio$init<increment><float>( ) = 0.0f 
+            audio$init<increment><float>( ) = 0.0f
+            var x : int = 0 
           }
          
 
