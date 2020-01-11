@@ -8,7 +8,7 @@ initialization templates.
 
 See the `TEST` directory for examples.
 
-Included are backends for JACK, OpenAL and PortAudio.
+Included are raw backends for JACK, OpenAL and PortAudio.
 
 ## Caveats
 

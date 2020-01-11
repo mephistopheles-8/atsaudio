@@ -7,7 +7,6 @@
 #include "./../HATS/project.hats"
 #include "share/atspre_staload.hats"
 staload "./../SATS/atsaudio.sats"
-staload _ = "./atsaudio.dats"
 staload "./../SATS/RAW/jack.sats"
 
 
