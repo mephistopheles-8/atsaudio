@@ -38,6 +38,17 @@ overload reveal with audio_io_impl_reveal
 overload conceal with audio_io_impl_conceal
 
 in
+
+fun {} 
+audio_io_jack_client{cin,cout:nat}( aio: !audio_io(cin,cout) ) : cPtr0( jack_client_t )
+  = let
+      var impl : audio_io_impl(cin,cout) 
+        = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
+      val client = impl.client
+      val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+  in client
+  end 
+
 implement {}
 audio_io_init{cin,cout}(sin,sout) 
   = let
@@ -95,10 +106,13 @@ audio_io_init{cin,cout}(sin,sout)
 implement {}
 audio_io_free{cin,cout}(aio) 
   = let
+      val client = audio_io_jack_client( aio )
+      
+      val _ = jack_deactivate( client );
+      val _ = jack_client_close( client );
+      
       val impl : audio_io_impl(cin,cout) 
         = reveal(aptr_getfree_elt<audio_io_impl0(cin,cout)>( aio ))
-      val _ = jack_deactivate( impl.client );
-      val _ = jack_client_close( impl.client );
     in
       arrayptr_free( impl.in_ports );
       arrayptr_free( impl.out_ports );
@@ -115,7 +129,7 @@ audio_io_process_beg{cin,cout}(aio) = {
         = @(arrayptr(cPtr0(jack_port_t),n) , sizeBtwe(0,n) , jack_nframes_t)
      (** Get the buffers **)
 
-     (** UGHHHHHH **)
+     (** UGHHHHHH: the cptr issue again **)
      absvt@ype env0(n:int) = env(n)
 
      extern
@@ -151,14 +165,14 @@ audio_io_process_beg{cin,cout}(aio) = {
         val i = env.1
       }
 
-     (** UGGHHHH **)
+     (** UGHHHHHH: the cptr issue again **)
      prval () = conceal( env_in ) and  () = conceal( env_out )
      (** *** *** **)
 
      val _ = arrayptr_foreach_env<ptr><env0(cin)>( impl.in_buffers, impl.sin, env_in ) 
      val _ = arrayptr_foreach_env<ptr><env0(cout)>( impl.out_buffers, impl.sout, env_out ) 
 
-     (** UGGHHHH **)
+     (** UGHHHHHH: the cptr issue again **)
      prval () = reveal( env_in ) and () = reveal( env_out )
      (** *** *** **)
 
@@ -178,20 +192,16 @@ implement {}
 audio_io_blocksize{cin,cout}(aio) 
   = $UNSAFE.cast{sizeGte(0)}( bsz )
   where {
-    var impl : audio_io_impl(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
-    val bsz = jack_get_buffer_size( impl.client )
-    val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+    val client = audio_io_jack_client( aio )
+    val bsz = jack_get_buffer_size( client )
   }
 
 implement {}
 audio_io_sample_rate{cin,cout}(aio) 
   = $UNSAFE.cast{sizeGte(0)}( sr )
   where {
-    var impl : audio_io_impl(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
-    val sr = jack_get_sample_rate( impl.client )
-    val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+    val client = audio_io_jack_client( aio )
+    val sr = jack_get_sample_rate( client )
   }
 
 implement {}
@@ -269,20 +279,18 @@ audio_io_sample_out{cin,cout}(aio, buf) = {
 fun {p:audioproc}{cin,cout:int}
 audio_jack_process{cin >= 0; cout >= 0}( nf: jack_nframes_t, audio: &audio(cin,cout,p) ) 
     : int = 0 where {
-    val () = audio_process<p><cin,cout>( audio )
+    val () =  audio_process<p><cin,cout>( audio )
   } 
 
 implement {proc}{cin,cout} 
 audio_run(  audio ) =
   let
     val aio = UN_audio_get_io( audio ) 
-    var impl : audio_io_impl(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
+    val client = audio_io_jack_client( aio )
 
-    val _ = jack_set_process_callback(impl.client, 
+    val _ = jack_set_process_callback( client, 
         $UNSAFE.cast{JackProcessCallback}( audio_jack_process<proc><cin,cout> ), addr@audio ) 
-    val _ = jack_activate( impl.client ) 
-    val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+    val _ = jack_activate( client )
 
     prval () = $UNSAFE.cast2void( aio ) 
   in
