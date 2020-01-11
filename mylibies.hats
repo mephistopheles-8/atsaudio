@@ -9,7 +9,12 @@
 
 staload "./SATS/atsaudio.sats"
 staload _ = "./DATS/atsaudio.dats"
+
+#ifdef ATSAUDIO_IO_DUMMY
 staload _ = "./DATS/atsaudio_dummy.dats"
+#elifdef ATSAUDIO_IO_JACK
+staload _ = "./DATS/atsaudio_jack.dats"
+#endif
 
 #include "./HATS/atsaudio_infix.hats"
 

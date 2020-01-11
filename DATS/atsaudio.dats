@@ -239,9 +239,10 @@ audio_init( sin, sout )
 
 implement {p}{cin,cout} 
 audio_free( audio )
-  = ( audiograph_free<p>(audio.state); 
-      matrixptr_free(audio.buffer);
+  = (
       audio_io_free(audio.io);
+      audiograph_free<p>(audio.state); 
+      matrixptr_free(audio.buffer);
     )
 
 extern 
@@ -519,5 +520,11 @@ audio_process( audio ) = {
       val () = audio.io := env0.3
       prval () = matrixptr_addback( pf | audio.buffer  )
   }
+
+
+implement {}
+UN_audio_get_io( audio ) = $UNSAFE.castvwtp1(audio.io)
+
+
 end
 

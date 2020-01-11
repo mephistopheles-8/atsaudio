@@ -5,6 +5,7 @@
  ** License : BSD3
 *)
 #include "share/atspre_staload.hats"
+#define ATSAUDIO_IO_DUMMY
 #include "./../mylibies.hats"
 
 local

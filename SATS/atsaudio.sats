@@ -117,6 +117,7 @@ fun {xs:audioproc_list}
   audiograph_list_free( audiograph_list( xs ) ) : void
 
 absvt@ype audio(sysin:int,sysout:int, audioproc)
+absvt@ype audioout(sysin:int,sysout:int, p:audioproc) = audio(sysin,sysout,p)
 absvtype audio_io(sysin:int,sysout:int) = ptr
 
 
@@ -124,10 +125,14 @@ fun {p:audioproc}{cin,cout:int}
 audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout) : audio(cin,cout,p)
 
 fun {p:audioproc}{cin,cout:int}
-audio_run{cin >= 0; cout >= 0}(!audio(cin,cout,p)) : void
+audio_run{cin >= 0; cout >= 0}(&audio(cin,cout,p)) : void
 
 fun {p:audioproc}{cin,cout:int}
 audio_free{cin >= 0; cout >= 0}( audio(cin,cout,p) ) : void
+
+fun {} UN_audio_get_io{p:audioproc}{cin,cout:int}( &audio(cin,cout,p) ) 
+  : audio_io(cin,cout) 
+
 
 fun {} 
 audio_io_init{cin,cout:nat}(size_t cin, size_t cout) : audio_io(cin,cout)
