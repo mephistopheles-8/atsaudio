@@ -130,6 +130,13 @@ audiograph_create<PAR(id,a,xs) --> sp>()
      val xs = audiograph_list_create<xs>() 
   }
 
+implement (id,a:t@ype+,sp0,sp1)
+audiograph_create<SING(id,a,sp0) --> sp1>() 
+  = audiograph_sing(sp1,sp0) where {
+     val sp0 = audiograph_create<sp0>()
+     val sp1 = audiograph_create<sp1>()
+  }
+
 implement (id,a:t@ype+,b:t@ype+,sp0,sp1)
 audiograph_create<REC(id,a,b,sp0) --> sp1>() 
   = audiograph_rec(sp1,x,sp0) where {
@@ -183,6 +190,15 @@ audiograph_free<PAR(id,a,xs) --> sp>( out ) = {
     (** avoid TCO **)
     val () = audiograph_free<sp>(sp) 
     val () = audiograph_list_free<xs>( xs )
+  }
+
+implement (id,a:t@ype+,sp0,sp1)
+audiograph_free<SING(id,a,sp0) --> sp1>( out ) = {
+    val ~audiograph_sing(sp1,sp0) = out
+    (** avoid TCO **)
+    val () = audiograph_free<sp0>(sp0) 
+    val () = audiograph_free<sp1>(sp1) 
+    val () = ignoret(5)
   }
 
 implement (id,a:t@ype+,b:t@ype+,sp0,sp1)
@@ -294,6 +310,17 @@ audio_process$run<PAR(id,a,xs) --> sp><cin,cout>( ag, arrin, arrout, sr ) = {
     val () = audio_process$step<sp><a><cout>( sp, x, arrout,sr )
   }
 
+implement (id,cin,cout,sp0,sp1,a:t@ype+)
+audio_process$run<SING(id,a,sp0) --> sp1><cin,cout>( ag, arrin, arrout, sr ) = {
+    val audiograph_sing(sp1,sp0) = ag 
+    var x : a = audio$input<id><a><cin>( arrin )
+    val () = audio_process$fold$accum<id><sp0><a,a>( sp0, x, x, sr ) where {
+            implement (a:t@ype+,b:t@ype+)
+            audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
+        }
+    val () = audio_process$step<sp1><a><cout>( sp1, x, arrout, sr )
+  }
+
 implement (id,cin,cout,sp0,sp1,a:t@ype+,b:t@ype+)
 audio_process$run<REC(id,a,b,sp0) --> sp1><cin,cout>( ag, arrin, arrout, sr ) = {
     val @audiograph_rec(sp1,y,sp0) = ag 
@@ -358,6 +385,19 @@ audio_process$step<PAR(id,b,xs) --> sp><a><cout>( ag, x, arrout, sr ) = {
     val () = audio_process$fold<id><xs><a,b>(xs,x,y,sr)
     (** avoid TCO **)
     val () = audio_process$step<sp><b><cout>( sp, y, arrout, sr )
+    val () = ignoret(0)
+  }
+
+implement (id,cout,sp0,sp1,a:t@ype+,b:t@ype+)
+audio_process$step<SING(id,b,sp0) --> sp1><a><cout>( ag, x, arrout, sr ) = {
+    val audiograph_sing(sp1,sp0) = ag 
+    var y : b = audio$init<id><b>( )
+    val () = audio_process$fold$accum<id><sp0><a,b>( sp0, x, y, sr ) where {
+            implement (a:t@ype+,b:t@ype+)
+            audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
+        }
+    (** avoid TCO **)
+    val () = audio_process$step<sp1><b><cout>( sp1, y, arrout, sr )
     val () = ignoret(0)
   }
 
@@ -429,6 +469,19 @@ audio_process$fold$accum<fid><PAR(id,b,xs) --> sp><a,c>( ag, x, y, sr ) = {
     val () = ignoret(0)
   }
 
+implement (fid,id,sp0,sp1,a:t@ype+,b:t@ype+,c:t@ype+)
+audio_process$fold$accum<fid><SING(id,b,sp0) --> sp1><a,c>( ag, x, y, sr ) = {
+    val audiograph_sing(sp1,sp0) = ag 
+    var z : b = audio$init<id><b>( )
+    val () = audio_process$fold$accum<id><sp0><a,b>( sp0, x, z, sr ) where {
+            implement (a:t@ype+,b:t@ype+)
+            audio$accumF<id><a,b>( x, y ) = audio$into<id><a,b>( x )
+        }
+    (** avoid TCO **)
+    val () = audio_process$fold$accum<fid><sp1><b,c>( sp1, z, y, sr )
+    val () = ignoret(0)
+  }
+
 implement (fid,id,sp0,sp1,a:t@ype+,b:t@ype+,c:t@ype+,d:t@ype+)
 audio_process$fold$accum<fid><REC(id,b,c,sp0) --> sp1><a,d>( ag, x, y, sr ) = {
     val @audiograph_rec(sp1,z,sp0) = ag 
@@ -484,11 +537,13 @@ audio_process$fold<fid>< apnil ><a,b>( xs, x ,y, sr ) = { (** NOOP **) }
 
 implement {p}{cin,cout} 
 audio_process{..}{t}( audio, sz ) = {
+      
+      val sr = audio_io_sample_rate( audio.io )
       var go 
       = fix@go( audio: &audio(cin,cout,p),  i : sizeLte(t)  )
         : void => 
         if i > 0
-        then {
+        then go( audio, i - 1 ) where {
 
             val p0 = arrayptr2ptr( audio.buffer ) 
             prval pv = arrayptr_takeout( audio.buffer )
@@ -498,8 +553,6 @@ audio_process{..}{t}( audio, sz ) = {
 
             val () = audio_io_sample_in( audio.io , !p0 )
 
-            val sr = audio_io_sample_rate( audio.io )
-
             val () = audio_process$run<p><cin,cout>( audio.state, !p0, !p1, sr )
 
             val () = audio_io_sample_out(audio.io, !p1 )
@@ -507,11 +560,10 @@ audio_process{..}{t}( audio, sz ) = {
             prval pv = array_v_unsplit( pa0, pa1 ) 
             prval () = arrayptr_addback( pv | audio.buffer  )
 
-            val () = go( audio, i - 1 ) 
           }
        else ()      
 
-      val () = audio_io_process_beg(audio.io)
+      val () = audio_io_process_beg(audio.io, sz)
       val () = go( audio, sz ) 
       val () = audio_io_process_end(audio.io)
   }

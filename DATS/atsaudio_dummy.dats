@@ -16,7 +16,7 @@ audio_io_init(sin,sout) = the_null_ptr
 implement {}
 audio_io_free(aio) = ()
 implement {}
-audio_io_process_beg(aio) = ()
+audio_io_process_beg(aio,t) = ()
 implement {}
 audio_io_process_end(aio) = ()
 implement {}

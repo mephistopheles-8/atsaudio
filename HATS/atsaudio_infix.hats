@@ -13,6 +13,7 @@ infixr -->
 #define DYN audionode_dyn
 #define PURE audionode_pure
 #define PAR audionode_par
+#define SING audionode_sing
 #define REC audionode_rec
 #define IF  audionode_if
 

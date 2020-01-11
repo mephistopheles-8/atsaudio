@@ -28,11 +28,16 @@ main0 ( )
       stadef rec_test = 5
       stadef plus_one = 6
       stadef mycond = 7
+      stadef par_rec_test = ~8 
+      stadef increment_ = DYN(increment,mono,float)
+      stadef par_rec_test_ = 
+            SING(par_rec_test,mono,
+              PAR(sum,mono, OUT(times_two,mono) ::: OUT(plus_five,mono) ::: apnil)
+              --> REC(rec_test,mono, mono, OUT(plus_one,mono)) --> OUT(0,mono)
+             )
       stadef p 
           = PURE(0,mono)
-            --> DYN(increment,mono,float) 
-            --> PAR(sum,mono, OUT(times_two,mono) ::: OUT(plus_five,mono) ::: apnil)
-            --> REC(rec_test,mono, mono, OUT(plus_one,mono))
+            --> increment_ --> par_rec_test_ 
             --> IF(mycond,mono,OUT(plus_one,mono), OUT(plus_five,mono))
             --> OUT(0,stereo)
  

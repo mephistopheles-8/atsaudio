@@ -55,6 +55,7 @@ datasort audionode =
   | audionode_dyn of (int,t@ype+,vt@ype+) (** id, process out, env **)
   | audionode_pure of (int,t@ype+)        (** id, process out **)
   | audionode_par of (int,t@ype+,audioproc_list) (** id, accumulator type, par list **)
+  | audionode_sing of (int,t@ype+,audioproc) (** id, audioproc out, audioproc **)
   | audionode_rec of (int,t@ype+,t@ype+,audioproc) (** id, audioproc out, process out, audioproc **)
   | audionode_if  of (int, t@ype+,audioproc, audioproc ) (** id, proc out, if proc, else proc **)
 
@@ -90,6 +91,9 @@ datavtype audiograph( audioproc ) =
   | {id:int}{a:t@ype+}{xs:audioproc_list}{sp:audioproc}
     audiograph_par( PAR(id,a,xs) --> sp ) 
       of ( audiograph(sp), audiograph_list( xs ) )
+  | {id:int}{a:t@ype+}{sp0,sp1:audioproc}
+    audiograph_sing( SING(id,a,sp0) --> sp1 ) 
+      of ( audiograph(sp1), audiograph( sp0 ) )
   | {id:int}{a,b:t@ype+}{sp0,sp1:audioproc}
     audiograph_rec( REC(id,a,b,sp0) --> sp1 ) 
       of ( audiograph(sp1), a, audiograph( sp0 ) )
@@ -145,7 +149,7 @@ fun {}
 audio_io_sample_rate{cin,cout:nat}( aio: !audio_io(cin,cout) ) : [sr:nat] size_t sr
 
 fun {}
-audio_io_process_beg{cin,cout:nat}( aio: !audio_io(cin,cout) ) : void
+audio_io_process_beg{cin,cout,t:nat}( aio: !audio_io(cin,cout), size_t t ) : void
 fun {}
 audio_io_process_end{cin,cout:nat}( aio: !audio_io(cin,cout) ) : void
 

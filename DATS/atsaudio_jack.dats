@@ -121,7 +121,7 @@ audio_io_free{cin,cout}(aio)
     end
 
 implement {}
-audio_io_process_beg{cin,cout}(aio) = {
+audio_io_process_beg{cin,cout,t}(aio,szt) = {
     var impl : audio_io_impl(cin,cout) 
       = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
 
@@ -142,7 +142,7 @@ audio_io_process_beg{cin,cout}(aio) = {
 
     (** **)
 
-     val bsz = jack_get_buffer_size( impl.client )
+     val bsz = $UNSAFE.cast{jack_nframes_t}( szt )
 
      var env_in : env(cin) = @(impl.in_ports, impl.sin ,bsz)
      var env_out : env(cout) = @(impl.out_ports,impl.sout,bsz)
