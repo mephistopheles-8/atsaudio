@@ -15,9 +15,10 @@ macdef RAND_MAX = $extval(lint,"RAND_MAX")
 implement
 main0 ( ) 
   = println!("Hello [test02]") where {
-      stadef random = 0
-      stadef p  = OUT(random,mono)
+      stadef random = 1
+      stadef p  = bpm_ --> OUT(0,mono)
 
+      implement {} audio$bpm() = 240.0
       implement
       audio$process<random><mono,mono>( x, sr ) 
         = $UNSAFE.cast{float}(random()) / $UNSAFE.cast{float}(RAND_MAX) 
