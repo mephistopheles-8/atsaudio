@@ -214,7 +214,7 @@ wavetable_init(  ) = @{
   , i = i2sz(0)
   , t = 0.0f
   } where {
-    val [n:int] (n : size_t n) = wavetable$size<id>()
+    val n = wavetable$size<id>()
     val buf = arrayptr_make_uninitized<float>( n )
     val () = arrayptr_initize<float>(buf,n) where {
       implement
@@ -245,7 +245,7 @@ audio$processR<_wavetable><stereo,mono><wavetable(id)>( x, env ) =
    in s1*(1.0f - frac) + s2*frac
   end 
 
-end
+end // [local]
 
 implement
 wavetable$size<_osc>() = i2sz(1024)
