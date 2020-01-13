@@ -12,23 +12,22 @@ typedef pulse_state = @{
   time = double
 }
 
-fun {} audio$bpm() : double
-
 stadef _id = 0
 
-stadef _chan1 = ~1
-stadef _chan2 = ~2
-stadef _chan3 = ~3
-stadef _chan4 = ~4
-stadef _chan5 = ~5
-stadef _chan6 = ~6
+stacst _chan1 : int
+stacst _chan2 : int
+stacst _chan3 : int
+stacst _chan4 : int
+stacst _chan5 : int
+stacst _chan6 : int
 
-stadef _first = ~7
-stadef _second = ~8
+stacst _first : int
+stacst _second : int
 
-stadef _sample_rate = ~9
-stadef _pulse = ~10
-stadef _bpm = ~11
+stacst _sample_rate : int
+stacst _pulse : int
+stacst _bpm : int
+stacst _exp_decay : int
 
 stadef out_( an: audionode, a:t@ype+ ) = an --> OUT(0,a)
 
@@ -47,16 +46,23 @@ stadef second_(a:t@ype+,b:t@ype+, sp: audioproc )
 stadef sample_rate_ = PURE(_sample_rate,mono)
 
 stadef pulse_ = SING( _pulse, mono, 
-    second_(mono,mono, out_(sample_rate_,mono)) 
+    PURE(0,mono) (** Freq (Hz) **)
+    --> second_(mono,mono, out_(sample_rate_,mono)) 
     --> DYN(_pulse,mono,pulse_state) 
     --> OUT(0,mono) 
   )
-stadef bpm_   = SING( _bpm, mono, 
-    second_(mono,mono, out_(sample_rate_,mono)) 
+
+stadef bpm_   = SING( _bpm, mono,
+    PURE(0,mono) (** BPM **)
+    --> second_(mono,mono, out_(sample_rate_,mono)) 
     --> DYN(_bpm,mono,pulse_state) 
     --> OUT(0,mono) 
   )
 
-
-
+stadef exp_decay_   = SING( _exp_decay, mono, 
+    PURE(0,stereo) (** @(trigger, decay_rate [0.0..1.0]) **)
+    --> second_(stereo,mono, out_(sample_rate_,mono)) 
+    --> REC(_exp_decay,mono,mono,OUT(0,mono)) 
+    --> OUT(0,mono) 
+  )
 

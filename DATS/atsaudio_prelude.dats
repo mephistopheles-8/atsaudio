@@ -24,17 +24,17 @@ implement (a:t@ype+)
 audio$init<_chan6><(@(int,a))>() = @(6,audio$init<0><a>())
 
 implement (a:t@ype+)
-audio$process<_chan1><a,@(int,a)>(x,sr) = @(1,x)
+audio$process<_chan1><a,@(int,a)>( x ) = @(1,x)
 implement (a:t@ype+)
-audio$process<_chan2><a,@(int,a)>(x,sr) = @(2,x)
+audio$process<_chan2><a,@(int,a)>( x ) = @(2,x)
 implement (a:t@ype+)
-audio$process<_chan3><a,@(int,a)>(x,sr) = @(3,x)
+audio$process<_chan3><a,@(int,a)>( x ) = @(3,x)
 implement (a:t@ype+)
-audio$process<_chan4><a,@(int,a)>(x,sr) = @(4,x)
+audio$process<_chan4><a,@(int,a)>( x ) = @(4,x)
 implement (a:t@ype+)
-audio$process<_chan5><a,@(int,a)>(x,sr) = @(5,x)
+audio$process<_chan5><a,@(int,a)>( x ) = @(5,x)
 implement (a:t@ype+)
-audio$process<_chan6><a,@(int,a)>(x,sr) = @(6,x)
+audio$process<_chan6><a,@(int,a)>( x ) = @(6,x)
 
 implement (a:t@ype+)
 audio$into<_chan1><a,@(int,a)>( x ) = @(1,x)
@@ -66,10 +66,7 @@ audio$accumF<_second>< @(int,a),@(a,a) >(x,y0)
   = if x.0 = 1 then @(x.1,y0.1) else @(y0.0,x.1)
 
 implement (a)
-audio$process<_sample_rate><a,mono>( x, sr ) = g0int2float( sz2i(sr) )
-
-implement {} 
-audio$bpm() = 120.0
+audio$processSys<_sample_rate><a,mono>( x, sr ) = g0int2float( sz2i(sr) )
 
 implement
 audio$init<_pulse><pulse_state>() = @{
@@ -82,11 +79,11 @@ audio$init<_bpm><pulse_state>() = @{
   }
 
 implement 
-audio$processF<_pulse><stereo,mono><pulse_state>( p, sr0, env ) =
+audio$processF<_pulse><stereo,mono><pulse_state>( p, state ) =
   let
     val @(freq,sr) = p
     val dt = 1.0/g0float2float(sr)
-    val t  = env.time + dt
+    val t  = state.time + dt
     val period = 1.0/g0float2float(freq)
   in if t > period
      then @( 1.0f, @{ time = t - period  })
@@ -94,14 +91,22 @@ audio$processF<_pulse><stereo,mono><pulse_state>( p, sr0, env ) =
   end
 
 implement 
-audio$processF<_bpm><stereo,mono><pulse_state>( p, sr0, env ) =
+audio$processF<_bpm><stereo,mono><pulse_state>( p, state ) =
   let
     val @(bpm,sr) = p
     val dt = 1.0/g0float2float(sr)
-    val t  = env.time + dt
+    val t  = state.time + dt
     val period = 60.0/g0float2float(bpm)
   in if t > period
      then @( 1.0f, @{ time = t - period  })
      else @( 0.0f, @{ time = t  })
   end
+
+implement 
+audio$process<_exp_decay>< @(@(stereo,mono),mono),mono >( x ) 
+  = let
+        val (((trig,decay),sr), x0) = x
+        val dt = 1.0f/sr
+     in if trig != 0.0f then trig else x0 - dt*decay 
+    end
 

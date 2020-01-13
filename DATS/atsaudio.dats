@@ -18,7 +18,12 @@ audio$init<id><int>( ) = 0
 implement (id)
 audio$init<id><uint>( ) = 0U 
 implement (id)
-audio$init<id><ulint>( ) = 0UL 
+audio$init<id><ulint>( ) = 0UL
+
+
+implement (id,a:t@ype+,b:t@ype+) 
+audio$init<id>< @(a,b) >() = @(audio$init<id><a>(),audio$init<id><b>())
+ 
 implement (id)
 audio$init<id><stereo>( ) = @(0.0f,0.0f) 
 implement (id)
@@ -88,7 +93,13 @@ audio$output<chan6><6>( st, out ) = array_copy<float>( out, arr, i2sz(6) )
   }
 
 implement (id,a:t@ype+)
-audio$process<id><a,a>( inp, sr ) = inp 
+audio$process<id><a,a>( inp ) = inp 
+
+(** SR is passed to most functions by default, but for
+    most (except for the sample rate primitive itself) it is
+    ignored. **)
+implement (id,a:t@ype+,b:t@ype+)
+audio$processSys<id><a,b>( inp, sr ) = audio$process<id><a,b>( inp )
 
 implement (id,a:t@ype+)
 audio$into<id><a,a>( inp ) = inp 
@@ -96,10 +107,13 @@ audio$into<id><a,a>( inp ) = inp
 (** Implement call-by-reference procedures in terms
     of their functional equivalent **)
 implement (id,a:t@ype+,b:t@ype+,env:vt@ype+)
-audio$processR<id><a,b><env>( x, sr, env ) = y where {
-    val @(y,env0) = audio$processF<id><a,b><env>(x,sr,env)
+audio$processR<id><a,b><env>( x, env ) = y where {
+    val @(y,env0) = audio$processF<id><a,b><env>(x,env)
     val () = (env := env0) 
   }
+
+implement (id,a:t@ype+,b:t@ype+,env:vt@ype+)
+audio$processSysR<id><a,b><env>( inp, sr, env ) = audio$processR<id><a,b>( inp, env )
 
 implement (id,a:t@ype+,b:t@ype+)
 audio$accumR<id><a,b>( x, y ) = {
@@ -288,7 +302,7 @@ implement (id,cin,cout,sp,a:t@ype+)
 audio_process$run<PURE(id,a) --> sp><cin,cout>( ag, arrin, arrout, sr ) = {
     val audiograph_pure(sp) = ag 
     val x = audio$input<id><a><cin>( arrin )
-    val x0 = audio$process<id><a,a>( x, sr )
+    val x0 = audio$processSys<id><a,a>( x, sr )
     val () = audio_process$step<sp><a><cout>( sp, x0, arrout, sr )
   }
 
@@ -296,7 +310,7 @@ implement (id,cin,cout,sp,a:t@ype+,env:vt@ype+)
 audio_process$run<DYN(id,a,env) --> sp><cin,cout>( ag, arrin, arrout, sr ) = {
     val @audiograph_dyn(sp,env0) = ag 
     val x = audio$input<id><a><cin>( arrin )
-    val x0 = audio$processR<id><a,a><env>( x, sr, env0 )
+    val x0 = audio$processSysR<id><a,a><env>( x, sr, env0 )
     val () = audio_process$step<sp><a><cout>( sp, x0, arrout, sr )
     prval () = fold@ag
   }
@@ -327,7 +341,7 @@ implement (id,cin,cout,sp0,sp1,a:t@ype+,b:t@ype+)
 audio_process$run<REC(id,a,b,sp0) --> sp1><cin,cout>( ag, arrin, arrout, sr ) = {
     val @audiograph_rec(sp1,y,sp0) = ag 
     val x = audio$input<id><b><cin>( arrin )
-    val x0 = audio$process<id><(@(b,a)),b>( @(x,y), sr )
+    val x0 = audio$processSys<id><(@(b,a)),b>( @(x,y), sr )
     val () = audio_process$step<sp1><b><cout>( sp1, x0, arrout, sr )
     val () = audio_process$fold$accum<id><sp0><b,a>( sp0, x0, y, sr ) where {
             implement (a:t@ype+,b:t@ype+)
@@ -356,14 +370,14 @@ implement (id,cin,cout,a:t@ype+)
 audio_process$run<OUT(id,a)><cin,cout>( ag, arrin, arrout, sr ) = {
     val audiograph_out() = ag 
     val x = audio$input<id><a><cin>( arrin )
-    val x0 = audio$process<id><a,a>( x, sr )
+    val x0 = audio$processSys<id><a,a>( x, sr )
     val () = audio$output<a><cout>(x0,arrout)
   }
 
 implement (id,cout,sp,a:t@ype+,b:t@ype+)
 audio_process$step<PURE(id,b) --> sp><a><cout>( ag, x, arrout, sr ) = {
     val audiograph_pure(sp) = ag 
-    val y = audio$process<id><a,b>( x, sr )
+    val y = audio$processSys<id><a,b>( x, sr )
     (** avoid TCO **)
     val () = audio_process$step<sp><b><cout>( sp, y, arrout, sr )
     val () = ignoret(0)
@@ -372,7 +386,7 @@ audio_process$step<PURE(id,b) --> sp><a><cout>( ag, x, arrout, sr ) = {
 implement (id,cout,sp,a:t@ype+,b:t@ype+,env:vt@ype+)
 audio_process$step<DYN(id,b,env) --> sp><a><cout>( ag, x, arrout, sr ) = {
     val @audiograph_dyn(sp,env0) = ag 
-    val y = audio$processR<id><a,b>( x, sr, env0 )
+    val y = audio$processSysR<id><a,b>( x, sr, env0 )
     (** avoid TCO **)
     val () = audio_process$step<sp><b><cout>( sp, y, arrout, sr )
     prval () = fold@ag
@@ -406,7 +420,7 @@ audio_process$step<SING(id,b,sp0) --> sp1><a><cout>( ag, x, arrout, sr ) = {
 implement (id,cout,sp0,sp1,a:t@ype+,b:t@ype+,c:t@ype+)
 audio_process$step<REC(id,b,c,sp0) --> sp1><a><cout>( ag, x, arrout, sr ) = {
     val @audiograph_rec(sp1,y,sp0) = ag 
-    val x0 = audio$process<id><(@(a,b)),c>( @(x,y), sr )
+    val x0 = audio$processSys<id><(@(a,b)),c>( @(x,y), sr )
     (** avoid TCO **)
     val () = audio_process$step<sp1><c><cout>( sp1, x0, arrout, sr )
     val () = audio_process$fold$accum<id><sp0><c,b>( sp0, x0, y, sr ) where {
@@ -437,14 +451,14 @@ audio_process$step<IF(id,b,sp0,sp1) --> sp2><a><cout>( ag, x, arrout, sr ) = {
 implement (id,cout,a:t@ype+,b:t@ype+)
 audio_process$step<OUT(id,b)><a><cout>( ag, x, arrout, sr ) = {
     val audiograph_out() = ag 
-    val y = audio$process<id><a,b>( x, sr )
+    val y = audio$processSys<id><a,b>( x, sr )
     val () = audio$output<b><cout>(y,arrout)
   }
 
 implement (fid,id,sp,a:t@ype+,b:t@ype+,c:t@ype+)
 audio_process$fold$accum<fid><PURE(id,b) --> sp><a,c>( ag, x, y, sr ) = {
     val audiograph_pure(sp) = ag 
-    val z = audio$process<id><a,b>( x, sr )
+    val z = audio$processSys<id><a,b>( x, sr )
     (** avoid TCO **)
     val () = audio_process$fold$accum<fid><sp><b,c>( sp, z, y, sr )
     val () = ignoret(0)
@@ -453,7 +467,7 @@ audio_process$fold$accum<fid><PURE(id,b) --> sp><a,c>( ag, x, y, sr ) = {
 implement (fid,id,sp,a:t@ype+,b:t@ype+,c:t@ype+,env:vt@ype+)
 audio_process$fold$accum<fid><DYN(id,b,env) --> sp><a,c>( ag, x, y, sr ) = {
     val @audiograph_dyn(sp,env0) = ag 
-    val z = audio$processR<id><a,b>( x, sr, env0 )
+    val z = audio$processSysR<id><a,b>( x, sr, env0 )
     (** avoid TCO **)
     val () = audio_process$fold$accum<fid><sp><b,c>( sp, z, y, sr )
     prval () = fold@ag
@@ -487,7 +501,7 @@ audio_process$fold$accum<fid><SING(id,b,sp0) --> sp1><a,c>( ag, x, y, sr ) = {
 implement (fid,id,sp0,sp1,a:t@ype+,b:t@ype+,c:t@ype+,d:t@ype+)
 audio_process$fold$accum<fid><REC(id,b,c,sp0) --> sp1><a,d>( ag, x, y, sr ) = {
     val @audiograph_rec(sp1,z,sp0) = ag 
-    val x0 = audio$process<id><(@(a,b)),c>( @(x,z), sr )
+    val x0 = audio$processSys<id><(@(a,b)),c>( @(x,z), sr )
     (** avoid TCO **)
     val () = audio_process$fold$accum<fid><sp1><c,d>( sp1, x0, y, sr )
     val () = audio_process$fold$accum<id><sp0><c,b>( sp0, x0, z, sr ) where {
@@ -520,7 +534,7 @@ audio_process$fold$accum<fid><IF(id,b,sp0,sp1) --> sp2><a,c>( ag, x, y, sr ) = {
 implement (fid,id,cout,a:t@ype+,b:t@ype+,c:t@ype+)
 audio_process$fold$accum<fid><OUT(id,b)><a,c>( ag, x, y, sr ) = {
     val audiograph_out() = ag 
-    val z = audio$process<id><a,b>( x, sr )
+    val z = audio$processSys<id><a,b>( x, sr )
     val () = audio$accumR<fid><b,c>(z,y)
   }
 

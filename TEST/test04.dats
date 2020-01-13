@@ -11,31 +11,23 @@
 staload "libats/libc/SATS/stdlib.sats"
 staload "libats/libc/SATS/unistd.sats"
 
-macdef RAND_MAX = $extval(lint,"RAND_MAX")
- 
 implement
 main0 ( ) 
-  = println!("Hello [test03]") where {
-      stacst random : int
+  = println!("Hello [test04]") where {
       stacst bpm : int
       stacst decay_rate  : int
 
       stadef p  =
-        PURE(bpm,mono) --> bpm_ --> 
-        second_(mono,mono, PURE(random,mono) --> OUT(0,mono))-->
-           OUT(0,mono)
+        PURE(bpm,mono) 
+        --> bpm_ 
+        --> second_(mono,mono, out_( PURE(decay_rate,mono), mono ))
+        --> exp_decay_
+        --> OUT(0,mono)
 
-      implement (a)
-      audio$process<random><a,mono>( x ) 
-        = $UNSAFE.cast{float}(random()) / $UNSAFE.cast{float}(RAND_MAX) 
-
-      implement 
-      audio$process<0><stereo,mono>( x ) = x.0
-        where {
-          val () = if x.0 = 1 then println!(x.0, " ", x.1)
-        }
       implement (a)
       audio$process<bpm><a,mono>( x ) = 120.0f
+      implement (a)
+      audio$process<decay_rate><a,mono>( x ) = 0.8f
 
       var env : int = 0
       var audio0 : audio(0,1,p)

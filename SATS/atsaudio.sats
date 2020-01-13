@@ -23,15 +23,23 @@ fun {env:vt@ype+}
 
 (** Process pure **)
 fun {id:int}{a,b:t@ype+}
-audio$process{sr:nat}( a, size_t sr ) : b
+audio$process( a ) : b
+
+(** This can be used in place of a graph with sample rate **)
+fun {id:int}{a,b:t@ype+}
+audio$processSys{sr:nat}( a, size_t sr ) : b
 
 (** Functional style; may involve more copying with larger state **)
 fun {id:int}{a,b:t@ype+}{env:vt@ype+}
-audio$processF{sr:nat}( a, size_t sr, env ) : @(b,env)
+audio$processF( a,  env ) : @(b,env)
 
 (** Call-by-reference style; this defaults to `audio$processF` **)
 fun {id:int}{a,b:t@ype+}{env:vt@ype+}
-audio$processR{sr:nat}( a, size_t sr, &env >> _ ) : b
+audio$processR( a,  &env >> _ ) : b
+
+(** Call-by-reference style; this defaults to `audio$processF`; this can be used in place of a graph with sample rate **)
+fun {id:int}{a,b:t@ype+}{env:vt@ype+}
+audio$processSysR{sr:nat}( a, size_t sr, &env >> _ ) : b
 
 (** This takes the input array and returns a value of type a 
     For the first node of the sequence, this is assumed to be
