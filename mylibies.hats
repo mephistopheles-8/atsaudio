@@ -20,5 +20,6 @@ staload _ = "./DATS/atsaudio_jack.dats"
 #endif
 
 #include "./HATS/atsaudio_infix.hats"
+#include "./mydepies.hats"
 
 #endif

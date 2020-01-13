@@ -37,7 +37,7 @@ audio$init<id><chan6>( ) = @(0.0f,0.0f,0.0f,0.0f,0.0f,0.0f)
 implement (id)
 audio$init<id><bool>( ) = false 
 
-implement (id,a:t@ype+,env:vt@ype+)
+implement (id,a:vt@ype+,env:vt@ype+)
 audio$init_env<id><env,a>( env )  = audio$init<id><a>()
 
 implement (id,a:t@ype+)
