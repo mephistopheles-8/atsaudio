@@ -8,6 +8,7 @@
 #include "share/atspre_staload.hats"
 staload "./../SATS/atsaudio.sats"
 staload "./../SATS/atsaudio_prelude.sats"
+staload "libats/libc/SATS/stdlib.sats"
 staload "libats/libc/SATS/math.sats"
 staload _ = "libats/libc/DATS/math.dats"
 #include "./../HATS/atsaudio_infix.hats"
@@ -255,7 +256,11 @@ wavetable$init<_osc>( i )
         val i = g0int2float(sz2i(i))
     }
 
-
-
+implement (a)
+audio$process<_noise><a,mono>( x ) 
+  = 2.0f*(g0int2float(rand()) / g0int2float(RAND_MAX)) - 1.0f
+  where {
+    macdef RAND_MAX = $extval(int,"RAND_MAX")
+  }
 
 

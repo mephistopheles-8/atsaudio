@@ -185,7 +185,7 @@ stadef bpm_   = SING( _bpm, mono,
   )
 
 stadef exp_decay_   = SING( _exp_decay, mono, 
-    PURE(0,stereo) (** @(trigger, decay_rate [0.0..1.0]) **)
+    PURE(0,stereo) (** @(trigger, decay_rate ) **)
     --> second_(stereo,mono, out_(sample_rate_,mono)) 
     --> REC(_exp_decay,mono,mono,OUT(0,mono)) 
     --> OUT(0,mono) 
@@ -211,4 +211,4 @@ stadef osc_ = SING(_osc, mono,
         --> OUT(0,mono)
     )
 
-
+stadef noise_ = PURE(_noise,mono)

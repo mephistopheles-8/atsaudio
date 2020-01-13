@@ -15,16 +15,23 @@ main0 ( )
   = println!("Hello [test04]") where {
       stacst bpm : int
       stacst decay_rate  : int
-      stacst times : int
-      stacst sinosc : int
       stacst freq : int
-
+      stacst lfofreq : int
+      stacst lfohz : int
       stadef p  =
         PURE(bpm,mono) 
         --> bpm_ 
         --> second_(mono,mono, out_( PURE(decay_rate,mono), mono ))
         --> exp_decay_
-        --> second_(mono,mono, PURE(freq,mono) --> out_(osc_, mono))
+        --> second_(mono,mono, 
+              PURE(lfofreq,mono)
+              --> osc_
+              --> second_(mono,mono,out_(PURE(lfohz,mono),mono))
+              --> times_ 
+              --> second_(mono,mono,out_(PURE(freq,mono),mono))
+              --> plus_
+              --> out_(osc_, mono)
+          )
         --> times_
         --> OUT(0,mono)
 
@@ -32,10 +39,12 @@ main0 ( )
       audio$process<bpm><a,mono>( x ) = 120.0f
       implement (a)
       audio$process<decay_rate><a,mono>( x ) = 10.0f
-      implement
-      audio$process<times><stereo,mono>( x ) = x.0*x.1
       implement (a)
       audio$process<freq><a,mono>( x ) = 440.0f
+      implement (a)
+      audio$process<lfofreq><a,mono>( x ) = 4.0f
+      implement (a)
+      audio$process<lfohz><a,mono>( x ) = 50.0f
 
       var env : int = 0
       var audio0 : audio(0,1,p)
