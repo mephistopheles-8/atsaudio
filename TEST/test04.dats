@@ -42,7 +42,7 @@ main0 ( )
         = audio_init<p><0,1>( i2sz(0), i2sz(1), env )
 
       val () = audio_run<p><0,1> ( audio0 )
-      val _ = sleep(20)
+      val _ = sleep(5)
 
       val () = audio_free<p><0,1>( audio0 )
   }

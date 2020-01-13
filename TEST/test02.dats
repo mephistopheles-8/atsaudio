@@ -46,17 +46,17 @@ main0 ( )
       audio$accumF<sum><mono,mono>( x, y ) = y + x
 
       implement
-      audio$process<rec_test><(@(mono,mono)),mono>( x, sr) = x.0 + x.1
+      audio$process<rec_test><(@(mono,mono)),mono>( x ) = x.0 + x.1
 
       implement
       audio$cond<mycond><mono>( x ) = x > 20000.0f
 
       implement
-      audio$process<times_two><mono,mono>( x, sr ) = x*2.0f 
+      audio$process<times_two><mono,mono>( x ) = x*2.0f 
       implement
-      audio$process<plus_one><mono,mono>( x,sr ) = x + 1.0f
+      audio$process<plus_one><mono,mono>( x ) = x + 1.0f
       implement
-      audio$process<plus_five><mono,mono>( x,sr ) = x + 5.0f 
+      audio$process<plus_five><mono,mono>( x ) = x + 5.0f 
 
 
       var audio0 : audio(0,2,p)
@@ -71,9 +71,9 @@ main0 ( )
       val () = audio_process<p><0,2>( audio0, i2sz(4) ) 
         where {
           implement (a)
-          audio$processF<increment><a,mono><float>( st, sr, env ) = @(env,env + 1) 
+          audio$processF<increment><a,mono><float>( st, env ) = @(env,env + 1) 
           implement
-          audio$process<0><mono,stereo>( m, sr ) = @(m,m)
+          audio$process<0><mono,stereo>( m ) = @(m,m)
         }
 
       val () = print_audio( audio0 )
