@@ -13,6 +13,7 @@ staload "libats/libc/SATS/unistd.sats"
 implement
 main0 ( ) 
   = println!("Hello [test04]") where {
+      (** Test bpm, exp_decay, second_ and simple arithmatic **)
       stacst bpm : int
       stacst decay_rate  : int
       stacst freq : int

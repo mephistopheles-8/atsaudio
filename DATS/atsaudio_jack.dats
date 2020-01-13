@@ -48,6 +48,16 @@ audio_io_jack_client{cin,cout:nat}( aio: !audio_io(cin,cout) ) : cPtr0( jack_cli
   in client
   end 
 
+macdef snprintf(buf,bsz,pattern,value) = 
+  let
+    typedef
+    cstring = $extype"atstype_string"
+    val bufp = $UNSAFE.cast{cstring}(addr@,(buf))
+    val _(*int*) =
+      $extfcall(ssize_t, "snprintf", bufp, ,(bsz), ,(pattern), ,(value))
+  in $UNSAFE.cast{string}(addr@,(buf))
+  end
+
 implement {}
 audio_io_init{cin,cout}(sin,sout) 
   = let
@@ -67,8 +77,9 @@ audio_io_init{cin,cout}(sin,sout)
         val () = arrayptr_initize<cPtr0(jack_port_t)>(in_ports, sin) where {
             implement
             array_initize$init<cPtr0(jack_port_t)>(i,x) = {
-              val input_port 
-                = jack_port_register( client, "in", JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0UL )
+              var buf = @[byte][32]() 
+              val input_port
+                = jack_port_register( client, snprintf(buf,32,"in-%d",i), JACK_DEFAULT_AUDIO_TYPE, JackPortIsInput, 0UL )
               val () 
                 = assert_errmsg( ~cptr_is_null(input_port)
                   , "[atsaudio] Could not open JACK input port")
@@ -79,8 +90,9 @@ audio_io_init{cin,cout}(sin,sout)
         val () = arrayptr_initize<cPtr0(jack_port_t)>(out_ports, sout) where {
             implement
             array_initize$init<cPtr0(jack_port_t)>(i,x) = {
+              var buf = @[byte][32]() 
               val output_port 
-                = jack_port_register( client, "out", JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0UL )
+                = jack_port_register( client, snprintf(buf,32,"out-%d",i), JACK_DEFAULT_AUDIO_TYPE, JackPortIsOutput, 0UL )
               val () 
                 = assert_errmsg( ~cptr_is_null(output_port)
                     , "[atsaudio] Could not open JACK output port")

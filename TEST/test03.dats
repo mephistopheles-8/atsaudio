@@ -27,7 +27,7 @@ main0 ( )
 
       implement (a)
       audio$process<random><a,mono>( x ) 
-        = $UNSAFE.cast{float}(random()) / $UNSAFE.cast{float}(RAND_MAX) 
+        = $UNSAFE.cast{float}(rand()) / $UNSAFE.cast{float}(RAND_MAX) 
 
       implement 
       audio$process<0><stereo,mono>( x ) = x.0
