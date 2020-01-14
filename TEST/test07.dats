@@ -37,14 +37,23 @@ main0 ( )
       stacst bpm : int
       stacst decay_rate  : int
       stacst consolein : int
-
-      val q  = spsc_create<char>( i2sz( 128 ) )
-      val @(rconn, wconn) = spsc_split( q )
-
+      
       vtypedef consolein_state = @{
         handle = rconn( char )
       , freq   = float
       } 
+      
+      stadef p  =
+        PURE(bpm,mono) 
+        --> bpm_ 
+        --> second_(mono,mono, out_( PURE(decay_rate,mono), mono ))
+        --> exp_decay_
+        --> second_(mono,mono, 
+              DYN(consolein,mono,consolein_state)
+              --> out_(osc_, mono)
+          )
+        --> times_
+        --> OUT(0,mono)
 
       implement (id)
       audio$init_env<id><Option_vt(rconn(char)),consolein_state>( env )
@@ -75,34 +84,33 @@ main0 ( )
             val () = loop( env )
           } 
         
-      stadef p  =
-        PURE(bpm,mono) 
-        --> bpm_ 
-        --> second_(mono,mono, out_( PURE(decay_rate,mono), mono ))
-        --> exp_decay_
-        --> second_(mono,mono, 
-              DYN(consolein,mono,consolein_state)
-              --> out_(osc_, mono)
-          )
-        --> times_
-        --> OUT(0,mono)
 
       implement (a)
       audio$process<bpm><a,mono>( x ) = 120.0f
       implement (a)
       audio$process<decay_rate><a,mono>( x ) = 10.0f
+      
+      val q  = spsc_create<char>( i2sz( 128 ) )
+
+      val @(rconn, wconn) = spsc_split( q )
 
       var env : Option_vt(rconn(char)) = Some_vt(rconn)
+
       var audio0 : audio(0,1,p)
         = audio_init<p><0,1><Option_vt(rconn(char))>( i2sz(0), i2sz(1), env )
 
       val () = audio_run<p><0,1> ( audio0 )
+
       var wconn0 : wconn(char) = wconn
+
       val () = fileref_foreach_env<wconn(char)>( stdin_ref, wconn0 ) where {
+      
           implement {} fileref_foreach$bufsize((*void*)) = i2sz(1)
+
           implement
           fileref_foreach$fwork<wconn(char)>(c,env) = 
-            if ~wconn_fire0<char>(env,c) then println!("Buffer full...") else ignoret(usleep(50000)) 
+            if ~wconn_fire0<char>(env,c) then println!("Buffer full...") else ignoret(usleep(50000))
+ 
         } 
       val () = audio_free<p><0,1>( audio0 )
 
