@@ -9,9 +9,13 @@
 staload "./../SATS/atsaudio.sats"
 staload "./../SATS/RAW/jack.sats"
 
+implement {}
+audio_system_init() = () 
+implement {}
+audio_system_shutdown() = () 
 
 local
-vtypedef audio_io_impl(sin:int,sout:int) = @{
+vtypedef audio_io_jack(sin:int,sout:int) = @{
     client = cPtr0(jack_client_t)
   , in_ports  = arrayptr(cPtr0(jack_port_t),sin)
   , out_ports  = arrayptr(cPtr0(jack_port_t),sout)
@@ -21,30 +25,30 @@ vtypedef audio_io_impl(sin:int,sout:int) = @{
   , sout = size_t sout
   , t = size_t
 }
-absvt@ype audio_io_impl0(sin:int,sout:int) = audio_io_impl(sin,sout)
-absimpl audio_io(sin,sout) = aPtr1( audio_io_impl0(sin,sout) )
+absvt@ype audio_io_jack0(sin:int,sout:int) = audio_io_jack(sin,sout)
+absimpl audio_io(sin,sout) = aPtr1( audio_io_jack0(sin,sout) )
 
 (** One of the cptr types in the record were complaining on calls to aptr_get_elt/aptr_set_elt; 
     the opaque implementation seems to circumvent the issue.
 **)
 extern
-castfn audio_io_impl_reveal{sin,sout:nat}( audio_io_impl0(sin,sout) ) : audio_io_impl(sin,sout) 
+castfn audio_io_jack_reveal{sin,sout:nat}( audio_io_jack0(sin,sout) ) : audio_io_jack(sin,sout) 
 extern
-castfn audio_io_impl_conceal{sin,sout:nat}( audio_io_impl(sin,sout) ) : audio_io_impl0(sin,sout) 
+castfn audio_io_jack_conceal{sin,sout:nat}( audio_io_jack(sin,sout) ) : audio_io_jack0(sin,sout) 
 
 symintr reveal conceal
-overload reveal with audio_io_impl_reveal
-overload conceal with audio_io_impl_conceal
+overload reveal with audio_io_jack_reveal
+overload conceal with audio_io_jack_conceal
 
 in
 
 fun {} 
 audio_io_jack_client{cin,cout:nat}( aio: !audio_io(cin,cout) ) : cPtr0( jack_client_t )
   = let
-      var impl : audio_io_impl(cin,cout) 
-        = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
+      var impl : audio_io_jack(cin,cout) 
+        = reveal(aptr_get_elt<audio_io_jack0(cin,cout)>( aio ))
       val client = impl.client
-      val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+      val () = aptr_set_elt<audio_io_jack0(cin,cout)>( aio, conceal(impl) )
   in client
   end 
 
@@ -100,7 +104,7 @@ audio_io_init{cin,cout}(sin,sout)
             }
           }
         
-        val impl : audio_io_impl(cin,cout) = @{
+        val impl : audio_io_jack(cin,cout) = @{
             client = client
           , in_ports = in_ports 
           , out_ports = out_ports 
@@ -111,7 +115,7 @@ audio_io_init{cin,cout}(sin,sout)
           , t = i2sz(0)
         }
 
-     in aptr_make_elt<audio_io_impl0(cin,cout)>(conceal(impl))
+     in aptr_make_elt<audio_io_jack0(cin,cout)>(conceal(impl))
     end
 
 implement {}
@@ -122,8 +126,8 @@ audio_io_free{cin,cout}(aio)
       val _ = jack_deactivate( client );
       val _ = jack_client_close( client );
       
-      val impl : audio_io_impl(cin,cout) 
-        = reveal(aptr_getfree_elt<audio_io_impl0(cin,cout)>( aio ))
+      val impl : audio_io_jack(cin,cout) 
+        = reveal(aptr_getfree_elt<audio_io_jack0(cin,cout)>( aio ))
     in
       arrayptr_free( impl.in_ports );
       arrayptr_free( impl.out_ports );
@@ -133,8 +137,8 @@ audio_io_free{cin,cout}(aio)
 
 implement {}
 audio_io_process_beg{cin,cout,t}(aio,szt) = {
-    var impl : audio_io_impl(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
+    var impl : audio_io_jack(cin,cout) 
+      = reveal(aptr_get_elt<audio_io_jack0(cin,cout)>( aio ))
 
      vtypedef env(n:int) 
         = @(arrayptr(cPtr0(jack_port_t),n) , sizeBtwe(0,n) , jack_nframes_t)
@@ -193,7 +197,7 @@ audio_io_process_beg{cin,cout,t}(aio,szt) = {
     val () = impl.t := i2sz(0)
 //   val bsz = jack_get_buffer_size( impl.client ) 
 
-    val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+    val () = aptr_set_elt<audio_io_jack0(cin,cout)>( aio, conceal(impl) )
   }
 
 implement {}
@@ -221,8 +225,8 @@ audio_io_sample_in{cin,cout}(aio, buf) = {
     is_initized{a:t@ype+}{n:nat}( &(@[float?][n]) >> @[float][n] ) : void
     prval () = is_initized( buf )
 
-    var impl : audio_io_impl(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
+    var impl : audio_io_jack(cin,cout) 
+      = reveal(aptr_get_elt<audio_io_jack0(cin,cout)>( aio ))
    
      vtypedef env(n:int) 
         = @(arrayptr(ptr,n) , sizeBtwe(0,n), size_t n, size_t)
@@ -248,14 +252,14 @@ audio_io_sample_in{cin,cout}(aio, buf) = {
  
     val () = impl.in_buffers := e0.0
  
-    val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+    val () = aptr_set_elt<audio_io_jack0(cin,cout)>( aio, conceal(impl) )
   }
 
 implement {}
 audio_io_sample_out{cin,cout}(aio, buf) = {
 
-    var impl : audio_io_impl(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_impl0(cin,cout)>( aio ))
+    var impl : audio_io_jack(cin,cout) 
+      = reveal(aptr_get_elt<audio_io_jack0(cin,cout)>( aio ))
    
      vtypedef env(n:int) 
         = @(arrayptr(ptr,n) , sizeBtwe(0,n), size_t n, size_t)
@@ -282,7 +286,7 @@ audio_io_sample_out{cin,cout}(aio, buf) = {
     val () = impl.out_buffers := e0.0
     val () = impl.t := impl.t + 1
  
-    val () = aptr_set_elt<audio_io_impl0(cin,cout)>( aio, conceal(impl) )
+    val () = aptr_set_elt<audio_io_jack0(cin,cout)>( aio, conceal(impl) )
 
   }
 
@@ -290,7 +294,7 @@ audio_io_sample_out{cin,cout}(aio, buf) = {
 fun {p:audioproc}{cin,cout:int}
 audio_jack_process{cin >= 0; cout >= 0}( nf: jack_nframes_t, audio: &audio(cin,cout,p) ) 
     : int = 0 where {
-    val () =  audio_process<p><cin,cout>( audio, $UNSAFE.castvwtp0{[t:nat] size_t t}(nf) )
+    val () =  audio_process<p><cin,cout>( audio, $UNSAFE.cast{[t:nat] size_t t}(nf) )
   } 
 
 implement {proc}{cin,cout} 

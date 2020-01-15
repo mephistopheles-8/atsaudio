@@ -17,6 +17,8 @@ staload _ = "./DATS/atsaudio_prelude.dats"
 staload _ = "./DATS/atsaudio_dummy.dats"
 #elifdef ATSAUDIO_IO_JACK
 staload _ = "./DATS/atsaudio_jack.dats"
+#elifdef ATSAUDIO_IO_PORTAUDIO
+staload _ = "./DATS/atsaudio_portaudio.dats"
 #endif
 
 #include "./HATS/atsaudio_infix.hats"

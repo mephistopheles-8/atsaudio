@@ -163,9 +163,12 @@ absvt@ype audio(sysin:int,sysout:int, audioproc)
 absvt@ype audioout(sysin:int,sysout:int, p:audioproc) = audio(sysin,sysout,p)
 absvtype audio_io(sysin:int,sysout:int) = ptr
 
+fun {} audio_system_init() : void
+fun {} audio_system_shutdown() : void
 
 fun {p:audioproc}{cin,cout:int}{env:vt@ype+}
 audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout, &env >> _) : audio(cin,cout,p)
+
 
 fun {p:audioproc}{cin,cout:int}
 audio_run{cin >= 0; cout >= 0}(&audio(cin,cout,p)) : void
@@ -176,11 +179,13 @@ audio_free{cin >= 0; cout >= 0}( audio(cin,cout,p) ) : void
 fun {} UN_audio_get_io{p:audioproc}{cin,cout:int}( &audio(cin,cout,p) ) 
   : audio_io(cin,cout) 
 
-
 fun {} 
 audio_io_init{cin,cout:nat}(size_t cin, size_t cout) : audio_io(cin,cout)
 fun {}
 audio_io_free{cin,cout:nat}(audio_io(cin,cout)) : void
+
+fun {} audio_io_desired_sample_rate() : [n:nat] size_t n
+fun {} audio_io_desired_blocksize() : [n:nat] size_t n
 
 fun {}
 audio_io_blocksize{cin,cout:nat}( aio: !audio_io(cin,cout) ) : [bsz:nat] size_t bsz

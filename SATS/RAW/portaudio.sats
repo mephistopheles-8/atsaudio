@@ -11,24 +11,15 @@
 #define _portaudio_ats2_eq(x,y) ((x) == (y))
 #define _portaudio_ats2_neq(x,y) ((x) != (y))
 
-#define Pa_GetErrorText(x) (void *)Pa_GetErrorText(x)
+#define _portaudio_ats2_Pa_GetErrorText(x) (void *)Pa_GetErrorText(x)
+#define _portaudio_ats2_Pa_GetHostApiInfo(x) (PaHostApiInfo *)Pa_GetHostApiInfo(x)
+#define _portaudio_ats2_Pa_GetDeviceInfo(x) (PaDeviceInfo *)Pa_GetDeviceInfo(x)
+#define _portaudio_ats2_Pa_GetStreamInfo(x) (PaStreamInfo *)Pa_GetStreamInfo(x)
 
 #endif
 %}
 (**  **)
 
-macdef paInputOverflow = $extval(int,"paInputOverflow")
-macdef paFormatIsSupported = $extval(int,"paFormatIsSupported")
-macdef paOutputOverflow = $extval(int,"paOutputOverflow")
-macdef paCustomFormat = $extval(int,"paCustomFormat")
-macdef paUseHostApiSpecificDeviceSpecification = $extval(int,"paUseHostApiSpecificDeviceSpecification")
-macdef paNonInterleaved = $extval(int,"paNonInterleaved")
-macdef paFramesPerBufferUnspecified = $extval(int,"paFramesPerBufferUnspecified")
-macdef paNoDevice = $extval(int,"paNoDevice")
-macdef paOutputUnderflow = $extval(int,"paOutputUnderflow")
-macdef paMakeVersionNumber(major,minor,subminor) = $extval(int,"paMakeVersionNumber(major,minor,subminor)")
-macdef paInputUnderflow = $extval(int,"paInputUnderflow")
-macdef paPrimingOutput = $extval(int,"paPrimingOutput")
 
 fun Pa_GetVersion() : int = "mac#"
 
@@ -44,7 +35,18 @@ typedef PaVersionInfo = $extype_struct"PaVersionInfo" of {
 
 fun Pa_GetVersionInfo() : cPtr0(PaVersionInfo) = "mac#"
 
+macdef paFramesPerBufferUnspecified = $extval(ulint,"paFramesPerBufferUnspecified")
 typedef PaError = $extype"PaError"
+macdef paInputOverflow = $extval(PaError,"paInputOverflow")
+macdef paFormatIsSupported = $extval(PaError,"paFormatIsSupported")
+macdef paOutputOverflow = $extval(PaError,"paOutputOverflow")
+macdef paCustomFormat = $extval(PaError,"paCustomFormat")
+macdef paUseHostApiSpecificDeviceSpecification = $extval(PaError,"paUseHostApiSpecificDeviceSpecification")
+macdef paNonInterleaved = $extval(PaError,"paNonInterleaved")
+macdef paNoDevice = $extval(PaError,"paNoDevice")
+macdef paOutputUnderflow = $extval(PaError,"paOutputUnderflow")
+macdef paInputUnderflow = $extval(PaError,"paInputUnderflow")
+macdef paPrimingOutput = $extval(PaError,"paPrimingOutput")
 
 abst@ype PaErrorCode = $extype"PaErrorCode"
 
@@ -87,6 +89,14 @@ fn eq_PaErrorCode_PaErrorCode( PaErrorCode, PaErrorCode ) :<> bool = "mac#_porta
 
 fn eq_PaError_PaError( PaError, PaError ) :<> bool = "mac#_portaudio_ats2_eq"
 
+fn neq_PaError_PaErrorCode( PaError, PaErrorCode ) :<> bool = "mac#_portaudio_ats2_neq"
+
+fn neq_PaErrorCode_PaError( PaErrorCode, PaError ) :<> bool = "mac#_portaudio_ats2_neq"
+
+fn neq_PaErrorCode_PaErrorCode( PaErrorCode, PaErrorCode ) :<> bool = "mac#_portaudio_ats2_neq"
+
+fn neq_PaError_PaError( PaError, PaError ) :<> bool = "mac#_portaudio_ats2_neq"
+
 castfn PaError_PaErrorCode( PaError ) :<> PaErrorCode
 castfn PaErrorCode_PaError( PaErrorCode ) :<> PaError
 
@@ -98,7 +108,12 @@ overload = with eq_PaErrorCode_PaError
 overload = with eq_PaErrorCode_PaErrorCode
 overload = with eq_PaError_PaError
 
-fun Pa_GetErrorText(PaError) : string = "mac#"
+overload != with neq_PaError_PaErrorCode
+overload != with neq_PaErrorCode_PaError
+overload != with neq_PaErrorCode_PaErrorCode
+overload != with neq_PaError_PaError
+
+fun Pa_GetErrorText(PaError) : string = "mac#_portaudio_ats2_Pa_GetErrorText"
 
 fun Pa_Initialize() : PaError = "mac#"
 
@@ -139,7 +154,7 @@ typedef PaHostApiInfo = $extype_struct"PaHostApiInfo" of {
  , defaultOutputDevice = PaDeviceIndex
 }
 
-fun Pa_GetHostApiInfo(PaHostApiIndex) : cPtr0(PaHostApiInfo) = "mac#"
+fun Pa_GetHostApiInfo(PaHostApiIndex) : cPtr0(PaHostApiInfo) = "mac#_portaudio_ats2_Pa_GetHostApiInfo"
 
 fun Pa_HostApiTypeIdToHostApiIndex(PaHostApiTypeId) : PaHostApiIndex = "mac#"
 
@@ -183,7 +198,7 @@ typedef PaDeviceInfo = $extype_struct"PaDeviceInfo" of {
  , defaultSampleRate = double
 }
 
-fun Pa_GetDeviceInfo(PaDeviceIndex) : cPtr0(PaDeviceInfo) = "mac#"
+fun Pa_GetDeviceInfo(PaDeviceIndex) : cPtr0(PaDeviceInfo) = "mac#_portaudio_ats2_Pa_GetDeviceInfo"
 
 typedef PaStreamParameters = $extype_struct"PaStreamParameters" of {
    device = PaDeviceIndex
@@ -230,7 +245,7 @@ typedef PaStreamCallback = (ptr, ptr, ulint, cPtr0(PaStreamCallbackTimeInfo), Pa
 
 fun Pa_OpenStream(cPtr0(cPtr0(PaStream)), cPtr0(PaStreamParameters), cPtr0(PaStreamParameters), double, ulint, PaStreamFlags, PaStreamCallback, ptr) : PaError = "mac#"
 
-fun Pa_OpenDefaultStream(cPtr0(cPtr0(PaStream)), int, int, PaSampleFormat, double, ulint, cPtr0(PaStreamCallback), ptr) : PaError = "mac#"
+fun Pa_OpenDefaultStream(cPtr0(cPtr0(PaStream)), int, int, PaSampleFormat, double, ulint, PaStreamCallback, ptr) : PaError = "mac#"
 
 fun Pa_CloseStream(cPtr0(PaStream)) : PaError = "mac#"
 
@@ -255,7 +270,7 @@ typedef PaStreamInfo = $extype_struct"PaStreamInfo" of {
  , sampleRate = double
 }
 
-fun Pa_GetStreamInfo(cPtr0(PaStream)) : cPtr0(PaStreamInfo) = "mac#"
+fun Pa_GetStreamInfo(cPtr0(PaStream)) : cPtr0(PaStreamInfo) = "mac#_portaudio_ats2_Pa_GetStreamInfo"
 
 fun Pa_GetStreamTime(cPtr0(PaStream)) : PaTime = "mac#"
 

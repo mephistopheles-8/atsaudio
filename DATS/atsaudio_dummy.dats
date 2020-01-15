@@ -9,8 +9,12 @@
 staload "./../SATS/atsaudio.sats"
 
 local
-absimpl audio_io(sin,sout) = ptr 
+absimpl audio_io(sin,sout) = ptr
 in
+implement {}
+audio_system_init() = () 
+implement {}
+audio_system_shutdown() = () 
 implement {}
 audio_io_init(sin,sout) = the_null_ptr
 implement {}
