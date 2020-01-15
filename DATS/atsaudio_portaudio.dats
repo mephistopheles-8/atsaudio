@@ -93,7 +93,7 @@ fun {} audio_portaudio_stream_init{cin,cout:nat}(
       val (pfo,pfof | po ) = $UNSAFE.cptr_vtake(output_info)
    
       val () = (
-        inputParams.device  := Pa_GetDefaultInputDevice(); 
+        inputParams.device  := input_device; 
         inputParams.channelCount := sz2i(sin);
         inputParams.sampleFormat := paFloat32;
         inputParams.hostApiSpecificStreamInfo := null;
@@ -102,7 +102,7 @@ fun {} audio_portaudio_stream_init{cin,cout:nat}(
       prval () = pfif( pfi ) 
 
       val () = (
-        outputParams.device := Pa_GetDefaultOutputDevice(); 
+        outputParams.device := output_device; 
         outputParams.channelCount := sz2i(sout);
         outputParams.sampleFormat := paFloat32;
         outputParams.hostApiSpecificStreamInfo := null;
