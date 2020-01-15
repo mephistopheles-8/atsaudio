@@ -21,5 +21,8 @@ infixr :::
 #define ::: audioproc_list_cons 
 #define apnil audioproc_list_nil 
 
+(** Additional bitwise ops **)
+infixl lhas
+infixl landnot
 
 #endif

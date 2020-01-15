@@ -20,6 +20,7 @@
 %}
 (**  **)
 
+#include "./../../HATS/atsaudio_infix.hats"
 
 fun Pa_GetVersion() : int = "mac#"
 
@@ -37,16 +38,11 @@ fun Pa_GetVersionInfo() : cPtr0(PaVersionInfo) = "mac#"
 
 macdef paFramesPerBufferUnspecified = $extval(ulint,"paFramesPerBufferUnspecified")
 typedef PaError = $extype"PaError"
-macdef paInputOverflow = $extval(PaError,"paInputOverflow")
 macdef paFormatIsSupported = $extval(PaError,"paFormatIsSupported")
-macdef paOutputOverflow = $extval(PaError,"paOutputOverflow")
 macdef paCustomFormat = $extval(PaError,"paCustomFormat")
 macdef paUseHostApiSpecificDeviceSpecification = $extval(PaError,"paUseHostApiSpecificDeviceSpecification")
 macdef paNonInterleaved = $extval(PaError,"paNonInterleaved")
 macdef paNoDevice = $extval(PaError,"paNoDevice")
-macdef paOutputUnderflow = $extval(PaError,"paOutputUnderflow")
-macdef paInputUnderflow = $extval(PaError,"paInputUnderflow")
-macdef paPrimingOutput = $extval(PaError,"paPrimingOutput")
 
 abst@ype PaErrorCode = $extype"PaErrorCode"
 
@@ -233,7 +229,35 @@ typedef PaStreamCallbackTimeInfo = $extype_struct"PaStreamCallbackTimeInfo" of {
  , outputBufferDacTime = PaTime
 }
 
-typedef PaStreamCallbackFlags = $extype"PaStreamCallbackFlags"
+abst@ype PaStreamCallbackFlags = $extype"PaStreamCallbackFlags"
+macdef paInputOverflow = $extval(PaStreamCallbackFlags,"paInputOverflow")
+macdef paOutputOverflow = $extval(PaStreamCallbackFlags,"paOutputOverflow")
+macdef paOutputUnderflow = $extval(PaStreamCallbackFlags,"paOutputUnderflow")
+macdef paInputUnderflow = $extval(PaStreamCallbackFlags,"paInputUnderflow")
+macdef paPrimingOutput = $extval(PaStreamCallbackFlags,"paPrimingOutput")
+
+fn eq_PaStreamCallbackFlags_int( PaStreamCallbackFlags, int ) :<> bool = "mac#_portaudio_ats2_eq"
+fn eq_int_PaStreamCallbackFlags( int, PaStreamCallbackFlags ) :<> bool = "mac#_portaudio_ats2_eq"
+fn eq_PaStreamCallbackFlags_PaStreamCallbackFlags( PaStreamCallbackFlags, PaStreamCallbackFlags ) :<> bool = "mac#_portaudio_ats2_eq"
+
+fn neq_PaStreamCallbackFlags_int( PaStreamCallbackFlags, int ) :<> bool = "mac#_portaudio_ats2_neq"
+fn neq_int_PaStreamCallbackFlags( int, PaStreamCallbackFlags ) :<> bool = "mac#_portaudio_ats2_neq"
+fn neq_PaStreamCallbackFlags_PaStreamCallbackFlags( PaStreamCallbackFlags, PaStreamCallbackFlags ) :<> bool = "mac#_portaudio_ats2_neq"
+
+fn lhas_PaStreamCallbackFlags_PaStreamCallbackFlags( PaStreamCallbackFlags, PaStreamCallbackFlags ) :<> bool = "mac#_portaudio_ats2_lhas"
+
+fn lor_PaStreamCallbackFlags_PaStreamCallbackFlags( PaStreamCallbackFlags, PaStreamCallbackFlags ) :<> bool = "mac#_portaudio_ats2_lor"
+
+overload = with eq_PaStreamCallbackFlags_int
+overload = with eq_int_PaStreamCallbackFlags
+overload = with eq_PaStreamCallbackFlags_PaStreamCallbackFlags
+
+overload != with neq_PaStreamCallbackFlags_int
+overload != with neq_int_PaStreamCallbackFlags
+overload != with neq_PaStreamCallbackFlags_PaStreamCallbackFlags
+
+overload lor with lor_PaStreamCallbackFlags_PaStreamCallbackFlags
+overload lhas with lhas_PaStreamCallbackFlags_PaStreamCallbackFlags
 
 abst@ype PaStreamCallbackResult = $extype"PaStreamCallbackResult"
 

@@ -7,6 +7,7 @@
 #include "./../HATS/project.hats"
 #include "share/atspre_staload.hats"
 staload "./../SATS/atsaudio.sats"
+#include "./../HATS/atsaudio_infix.hats"
 staload "./../SATS/RAW/portaudio.sats"
 
 #define null the_null_ptr
@@ -288,6 +289,14 @@ audio_portaudio_process{cin >= 0; cout >= 0}(
 
     val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
     prval () = $UNSAFE.cast2void( aio )
+    val () 
+    = (
+      if flags lhas paInputOverflow then fprintln!(stderr_ref,"[atsaudio] paInputOverflow");
+      if flags lhas paInputUnderflow then fprintln!(stderr_ref,"[atsaudio] paInputUnderflow");
+      if flags lhas paOutputOverflow then fprintln!(stderr_ref,"[atsaudio] paOutputOverflow");
+      if flags lhas paOutputUnderflow then fprintln!(stderr_ref,"[atsaudio] paOutputUnderflow");
+      if flags lhas paPrimingOutput then fprintln!(stderr_ref,"[atsaudio] paPrimingOutput");
+    )
 
     val () = audio_process<p><cin,cout>( audio, $UNSAFE.cast{[t:nat] size_t t}(nframes) )
 
