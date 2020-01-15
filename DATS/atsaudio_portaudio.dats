@@ -113,10 +113,11 @@ fun {} audio_portaudio_stream_init{cin,cout:nat}(
 
       val sr = g0int2float(sz2i( audio_io_desired_sample_rate<>() ))
 
-      val () = if Pa_IsFormatSupported(
-          if sin > 0 then cptrR(inputParams) else cptr_null()
-        , if sout > 0 then cptrR(outputParams) else cptr_null(), sr) != paFormatIsSupported
-        then fprintln!(stderr_ref,"[atsaudio] Warning: Format is not supported!")
+      val () = assert_errmsg(
+           Pa_IsFormatSupported(
+            if sin > 0 then cptrR(inputParams) else cptr_null()
+          , if sout > 0 then cptrR(outputParams) else cptr_null(), sr) = paFormatIsSupported
+        , "[atsaudio] Portaudio does not support the given format" ) 
  
       val err = Pa_OpenStream( 
             cptrW{cPtr0(PaStream)}(stream)
