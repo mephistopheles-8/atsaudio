@@ -26,8 +26,13 @@ stacst _chan6 : int
 (** Constants **)
 stacst _pi : int
 stacst _e : int
+stacst _zero : int
+stacst _one : int
+stacst _two : int
 
 (** Arith **)
+stacst _neg : int
+stacst _abs : int
 stacst _times : int
 stacst _plus : int
 stacst _minus : int
@@ -64,18 +69,32 @@ stacst _first : int
 stacst _second : int
 
 stacst _sample_rate : int
+stacst _dt : int
 stacst _pulse : int
 stacst _bpm : int
 stacst _exp_decay : int
+stacst _phasor : int
 stacst _wavetable : int
 stacst _osc : int
+stacst _pulse : int
+stacst _square : int
+stacst _saw : int
 stacst _noise : int
 
 stadef out_( an: audionode, a:t@ype+ ) = an --> OUT(0,a)
 
 stadef pi_ = PURE(_pi,mono)
 stadef e_ = PURE(_e,mono)
+stadef one_ = PURE(_one,mono)
+stadef two_ = PURE(_two,mono)
+stadef zero_ = PURE(_zero,mono)
 
+stadef neg_ = SING(_neg, mono,
+    PURE(0,mono) --> PURE(_neg,mono) --> OUT(0,mono)
+  )
+stadef abs_ = SING(_abs, mono,
+    PURE(0,mono) --> PURE(_abs,mono) --> OUT(0,mono)
+  )
 stadef times_ = SING(_times, mono,
     PURE(0,stereo) --> PURE(_times,mono) --> OUT(0,mono)
   ) 
@@ -170,6 +189,12 @@ stadef second_(a:t@ype+,b:t@ype+, sp: audioproc )
 
 stadef sample_rate_ = PURE(_sample_rate,mono)
 
+stadef dt_ = SING(_dt,mono, 
+    one_ 
+    --> second_(mono,mono,out_(sample_rate_,mono)) 
+    --> out_(div_,mono) 
+) 
+
 stadef pulse_ = SING( _pulse, mono, 
     PURE(0,mono) (** Freq (Hz) **)
     --> second_(mono,mono, out_(sample_rate_,mono)) 
@@ -197,18 +222,47 @@ fun {id:int} wavetable$size() : sizeGt(0)
 fun {id:int} wavetable$init( size_t ) : float
 fun {id:int} wavetable_init( ) : wavetable(id)
 
+(** Not necessarily recommended, but this is implemented as pure **)
+stadef phasor_ = SING(_phasor, mono, 
+           PURE(0,mono) (** Freq (Hz) **)
+             --> second_(mono,mono,out_(dt_,mono))
+             --> times_
+             --> REC(0,mono,stereo,
+                    plus_ 
+                    --> second_(mono,mono,out_(one_,mono))
+                    --> mod_ 
+                    --> OUT(0,mono)
+                  )
+            --> plus_ 
+            --> OUT(0,mono)
+        )
 
 stadef wavetable_(id:int) = SING(_wavetable, mono,
-        PURE(0,mono) (** freq (Hz) **)
-        --> second_(mono, mono, out_(sample_rate_,mono)) 
+        PURE(0,mono) (** sample [0.0..1.0] **)
         --> DYN(_wavetable,mono,wavetable(id))
         --> OUT(0,mono)
     )
 
 stadef osc_ = SING(_osc, mono,
         PURE(0,mono) (** freq (Hz) **)
+        --> phasor_
         --> wavetable_(_osc)
         --> OUT(0,mono)
     )
 
+stadef saw_ = SING(_saw, mono,
+        PURE(0,mono) (** freq (Hz) **)
+        --> phasor_
+        --> first_(mono,mono,out_(one_,mono))
+        --> minus_
+        --> second_(mono,mono,out_(two_,mono))
+        --> times_
+        --> second_(mono,mono,out_(one_,mono))
+        --> minus_
+        --> OUT(0,mono)
+    )
+
 stadef noise_ = PURE(_noise,mono)
+
+
+

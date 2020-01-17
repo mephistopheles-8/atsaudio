@@ -73,7 +73,17 @@ implement (a:t@ype+)
 audio$process<_pi><a,mono>( x ) = g0float2float( M_PI )
 implement (a:t@ype+)
 audio$process<_e><a,mono>( x ) = g0float2float( M_E )
+implement (a:t@ype+)
+audio$process<_zero><a,mono>( x ) = 0.0f
+implement (a:t@ype+)
+audio$process<_one><a,mono>( x ) = 1.0f
+implement (a:t@ype+)
+audio$process<_two><a,mono>( x ) = 2.0f
 
+implement 
+audio$process<_neg><mono,mono>( x ) = ~x
+implement 
+audio$process<_abs><mono,mono>( x ) = g0float_abs(x)
 implement 
 audio$process<_times><stereo,mono>( x ) = x.0*x.1
 implement 
@@ -202,8 +212,6 @@ local
 absimpl wavetable(id) = [n:pos] @{
     buffer = arrayptr(float,n)
   , n = size_t n
-  , i = sizeBtwe(0,n)
-  , t = float
   }
 in
 
@@ -211,8 +219,6 @@ implement {id}
 wavetable_init(  ) = @{
     buffer = buf
   , n = n
-  , i = i2sz(0)
-  , t = 0.0f
   } where {
     val n = wavetable$size<id>()
     val buf = arrayptr_make_uninitized<float>( n )
@@ -230,17 +236,14 @@ audio$free< wavetable(id) >(wt) = arrayptr_free( wt.buffer )
 
 
 implement (id) 
-audio$processR<_wavetable><stereo,mono><wavetable(id)>( x, env ) = 
+audio$processR<_wavetable><mono,mono><wavetable(id)>( x, env ) = 
   let
-    val @(freq,sr) = x
-    val dt = 1.0f/sr
-    val dsamps = env.t + dt*freq*g0int2float(sz2i(env.n)) 
+    val dsamps = g0float_abs(x)*g0int2float( sz2i( env.n ) ) 
     val frac  = dsamps - floor(dsamps)
-    val () = env.i := ( env.i + $UNSAFE.cast{sizeGte(0)}( dsamps ) ) mod env.n
-    val () = env.t := frac
+    val i = ( $UNSAFE.cast{sizeGte(0)}( dsamps ) ) mod env.n
 
-    val s1 = arrayptr_get_at(env.buffer, env.i)
-    val s2 = arrayptr_get_at(env.buffer, (env.i + 1) mod env.n)
+    val s1 = arrayptr_get_at(env.buffer, i)
+    val s2 = arrayptr_get_at(env.buffer, (i + 1) mod env.n)
 
    in s1*(1.0f - frac) + s2*frac
   end 

@@ -16,10 +16,13 @@ implement
 main0 ( ) 
   = println!("Hello [test08]") where {
       stacst freq : int
-      stadef p  = PURE(freq,mono) --> osc_ --> OUT(0,stereo)
+      stadef p  
+        = PURE(freq,mono)
+            --> osc_
+            --> OUT(0,stereo)
 
       implement(a)
-      audio$process<freq><a,mono>( x ) = 330.0f
+      audio$process<freq><a,mono>( x ) = 440.0f
 
       implement (id)
       audio$process<id><mono,stereo>(x) = @(x,x)
