@@ -37,7 +37,7 @@ implement {}
 audio_io_desired_blocksize() = i2sz(256)
 
 local
-vtypedef audio_io_portaudio(sin:int,sout:int) = @{
+vtypedef audio_io_portaudio_impl(sin:int,sout:int) = @{
     stream = cPtr0(PaStream)
   , sin = size_t sin
   , sout = size_t sout
@@ -45,22 +45,12 @@ vtypedef audio_io_portaudio(sin:int,sout:int) = @{
   , inbuf = ptr
   , outbuf = ptr
 }
-absvt@ype audio_io_portaudio0(sin:int,sout:int) = audio_io_portaudio(sin,sout)
-absimpl audio_io(sin,sout) = aPtr1( audio_io_portaudio0(sin,sout) )
 
-(** One of the cptr types in the record were complaining on calls to aptr_get_elt/aptr_set_elt; 
-    the opaque implementation seems to circumvent the issue.
-**)
-extern
-castfn audio_io_portaudio_reveal{sin,sout:nat}( audio_io_portaudio0(sin,sout) ) 
-  : audio_io_portaudio(sin,sout) 
-extern
-castfn audio_io_portaudio_conceal{sin,sout:nat}( audio_io_portaudio(sin,sout) ) 
-  : audio_io_portaudio0(sin,sout) 
+datavtype audio_io_portaudio(sin:int,sout:int) =
+  | AIO_PORTAUDIO of audio_io_portaudio_impl(sin:int,sout:int)
+ 
+absimpl audio_io(sin,sout) = audio_io_portaudio(sin,sout) 
 
-symintr reveal conceal
-overload reveal with audio_io_portaudio_reveal
-overload conceal with audio_io_portaudio_conceal
 in
 
 
@@ -151,7 +141,7 @@ implement {}
 audio_io_init{cin,cout}(sin,sout) 
   = let
       (** It would be nice if this were more telling... **)
-      val impl : audio_io_portaudio(cin,cout) = @{
+      val impl : audio_io_portaudio_impl(cin,cout) = @{
             stream = cptr_null()
           , sin = sin
           , sout = sout
@@ -159,44 +149,34 @@ audio_io_init{cin,cout}(sin,sout)
           , inbuf = the_null_ptr
           , outbuf = the_null_ptr
         }
-     in aptr_make_elt<audio_io_portaudio0(cin,cout)>(conceal(impl))
+     in AIO_PORTAUDIO( impl ) 
     end
 
 
 implement {}
 audio_io_free{cin,cout}(aio) 
-  = let
-      var impl : audio_io_portaudio(cin,cout) 
-        = reveal(aptr_get_elt<audio_io_portaudio0(cin,cout)>( aio ))
-       val stream = impl.stream
-       val () = impl.stream := cptr_null() 
-       val () 
-          = if cptr_isnot_null( stream ) 
-            then assert_errmsg2( err = paNoError
-                , "[atsaudio] Could not stop PortAudio stream: ", Pa_GetErrorText(err)) where {
-                  val err = Pa_StopStream( stream )
-                }
-        
-        val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
-      
-      val impl : audio_io_portaudio(cin,cout) 
-        = reveal(aptr_getfree_elt<audio_io_portaudio0(cin,cout)>( aio ))
-
-     in 
-    end
+  = case+ aio of
+     | @AIO_PORTAUDIO( impl ) => 
+       let
+         val stream = impl.stream
+         val () = impl.stream := cptr_null() 
+         val () 
+            = if cptr_isnot_null( stream ) 
+              then assert_errmsg2( err = paNoError
+                  , "[atsaudio] Could not stop PortAudio stream: ", Pa_GetErrorText(err)) where {
+                    val err = Pa_StopStream( stream )
+                  }
+       in free@aio 
+      end
 
 
 implement {}
-audio_io_process_beg{cin,cout,t}(aio,szt) = {
-
-    var impl : audio_io_portaudio(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_portaudio0(cin,cout)>( aio ))
-
-    val () = impl.t := i2sz(0)
-
-    val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
-
-  }
+audio_io_process_beg{cin,cout,t}(aio,szt) =
+  case+ aio of
+   | @AIO_PORTAUDIO( impl ) => {
+      val () = impl.t := i2sz(0)
+      prval () = fold@aio
+   }
 
 implement {}
 audio_io_process_end{cin,cout}(aio) = ()
@@ -211,14 +191,13 @@ audio_io_sample_rate{cin,cout}(aio)
 
 
 implement {}
-audio_io_sample_in{cin,cout}(aio, buf) = {
+audio_io_sample_in{cin,cout}(aio, buf) = 
+  case+ aio of 
+   | @AIO_PORTAUDIO( impl ) => {
     extern praxi
     is_initized{a:t@ype+}{n:nat}( &(@[float?][n]) >> @[float][n] ) : void
     prval () = is_initized( buf )
 
-    var impl : audio_io_portaudio(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_portaudio0(cin,cout)>( aio ))
-   
      vtypedef env 
         = @(size_t, ptr)
    
@@ -236,37 +215,35 @@ audio_io_sample_in{cin,cout}(aio, buf) = {
               val p = env.1
             }
         }
-
-    val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
+    prval () = fold@aio
   }
 
 implement {}
-audio_io_sample_out{cin,cout}(aio, buf) = {
+audio_io_sample_out{cin,cout}(aio, buf) 
+  = case+ aio of 
+    | @AIO_PORTAUDIO(impl) => {
 
-    var impl : audio_io_portaudio(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_portaudio0(cin,cout)>( aio ))
+      vtypedef env 
+          = @(size_t, ptr)
+      
+      var e0 : env = @(impl.t*impl.sout, impl.outbuf )
+
+      val _ = array_foreach_env<float><env>( buf, impl.sout, e0 ) where {
+              implement
+              array_foreach$fwork<float><env>( x, env ) = ( 
+                  $UNSAFE.ptr0_set<float>( 
+                      ptr_add<float>( p, i ), x
+                  );
+                  env.0 := i + 1; 
+              ) where {
+                val i = env.0
+                val p = env.1
+              }
+          }
      
-    vtypedef env 
-        = @(size_t, ptr)
-    
-    var e0 : env = @(impl.t*impl.sout, impl.outbuf )
-
-    val _ = array_foreach_env<float><env>( buf, impl.sout, e0 ) where {
-            implement
-            array_foreach$fwork<float><env>( x, env ) = ( 
-                $UNSAFE.ptr0_set<float>( 
-                    ptr_add<float>( p, i ), x
-                );
-                env.0 := i + 1; 
-            ) where {
-              val i = env.0
-              val p = env.1
-            }
-        }
+      val () = impl.t := impl.t + 1
    
-    val () = impl.t := impl.t + 1
- 
-    val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
+      prval () = fold@aio
 
   }
 
@@ -278,17 +255,19 @@ audio_portaudio_process{cin >= 0; cout >= 0}(
   , nframes : ulint
   , time_info : cPtr0(PaStreamCallbackTimeInfo)
   , flags : PaStreamCallbackFlags
-  , audio : &audio(cin,cout,p)
+  , audio : !audio(cin,cout,p)
 ) : PaStreamCallbackResult = paContinue where {
 
     val aio = UN_audio_get_io( audio )
-    var impl : audio_io_portaudio(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_portaudio0(cin,cout)>( aio ))
 
-    val () = impl.inbuf := inp 
-    val () = impl.outbuf := out
-
-    val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
+    val () 
+      = (case+ aio of
+         | @AIO_PORTAUDIO( impl ) => {
+              val () = impl.inbuf := inp 
+              val () = impl.outbuf := out
+              prval () = fold@aio
+          }
+        ) 
     prval () = $UNSAFE.cast2void( aio )
     val () 
     = (
@@ -306,16 +285,18 @@ audio_portaudio_process{cin >= 0; cout >= 0}(
 implement {proc}{cin,cout} 
 audio_run(  audio ) = {
     val aio = UN_audio_get_io( audio )
-    var impl : audio_io_portaudio(cin,cout) 
-      = reveal(aptr_get_elt<audio_io_portaudio0(cin,cout)>( aio ))
-
-    val stream = audio_portaudio_stream_init( impl.sin, impl.sout, $UNSAFE.cast{PaStreamCallback}(
-      audio_portaudio_process<proc><cin,cout>
-    ), addr@audio )
-
-    val () = impl.stream := stream     
-    val () = aptr_set_elt<audio_io_portaudio0(cin,cout)>( aio, conceal(impl) )
     
+    val stream 
+      = (case+ aio of
+         | @AIO_PORTAUDIO( impl ) => stream where {
+              val stream = audio_portaudio_stream_init( impl.sin, impl.sout, $UNSAFE.cast{PaStreamCallback}(
+                audio_portaudio_process<proc><cin,cout>
+              ), $UNSAFE.castvwtp1{ptr}(audio) )
+
+              val () = impl.stream := stream     
+              prval () = fold@aio
+          }
+        ) 
     val err = Pa_StartStream( stream )
 
     val () = assert_errmsg2( err = paNoError

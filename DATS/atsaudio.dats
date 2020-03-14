@@ -251,31 +251,42 @@ audiograph_list_free< ap ::: xs  >(xs)
   }
 
 local
-absimpl audio(sin,sout,p) = @{
+
+vtypedef audio_impl(sin:int,sout:int,p:audioproc) = @{
      state = audiograph(p)
    , buffer = arrayptr(float,sin + sout)
    , sin   = size_t sin
    , sout   = size_t sout
    , io     = audio_io(sin,sout)
   }
+
+datavtype audio0(sin:int,sout:int,p:audioproc) =
+  | AUDIO of  audio_impl(sin,sout,p)
+
+absimpl audio(sin,sout,p) = audio0(sin,sout,p)
+
 in
 implement {p}{cin,cout}{env} 
 audio_init( sin, sout, env ) 
-    = @{
+    = AUDIO(@{
       state = audiograph_create<p>(env)
     , buffer = arrayptr_make_elt<float>(sin + sout,0.0f)
     , sin    = sin
     , sout   = sout
     , io     = audio_io_init(sin, sout) 
-    }  
+    })
 
 implement {p}{cin,cout} 
-audio_free( audio )
-  = (
-      audio_io_free(audio.io);
-      audiograph_free<p>(audio.state); 
-      arrayptr_free(audio.buffer);
-    )
+audio_free( a0 )
+  = case+ a0 of
+    | @AUDIO(audio) => {
+        val () =(
+          audio_io_free(audio.io);
+          audiograph_free<p>(audio.state); 
+          arrayptr_free(audio.buffer);
+          free@a0
+        )
+    }
 
 extern 
 fun {p:audioproc}{cin,cout:int}
@@ -552,11 +563,13 @@ implement (fid,a:t@ype+,b:t@ype+)
 audio_process$fold<fid>< apnil ><a,b>( xs, x ,y, sr ) = { (** NOOP **) }
 
 implement {p}{cin,cout} 
-audio_process{..}{t}( audio, sz ) = {
+audio_process{..}{t}( a0, sz ) =
+  case+ a0 of
+  | @AUDIO(audio) => {
       
       val sr = audio_io_sample_rate( audio.io )
       var go 
-      = fix@go( audio: &audio(cin,cout,p),  i : sizeLte(t)  )
+      = fix@go( audio: &audio_impl(cin,cout,p),  i : sizeLte(t)  )
         : void => 
         if i > 0
         then go( audio, i - 1 ) where {
@@ -582,11 +595,14 @@ audio_process{..}{t}( audio, sz ) = {
       val () = audio_io_process_beg(audio.io, sz)
       val () = go( audio, sz ) 
       val () = audio_io_process_end(audio.io)
+      prval () = fold@a0
   }
 
 
 implement {}
-UN_audio_get_io( audio ) = $UNSAFE.castvwtp1(audio.io)
+UN_audio_get_io( a0 ) 
+  = case+ a0 of
+    | AUDIO(audio) =>  $UNSAFE.castvwtp1(audio.io)
 
 
 end

@@ -159,8 +159,8 @@ fun {pr:audioproc}
 fun {xs:audioproc_list} 
   audiograph_list_free( audiograph_list( xs ) ) : void
 
-absvt@ype audio(sysin:int,sysout:int, audioproc)
-absvt@ype audioout(sysin:int,sysout:int, p:audioproc) = audio(sysin,sysout,p)
+absvtype audio(sysin:int,sysout:int, audioproc)
+absvtype audioout(sysin:int,sysout:int, p:audioproc) = audio(sysin,sysout,p)
 absvtype audio_io(sysin:int,sysout:int) = ptr
 
 fun {} audio_system_init() : void
@@ -171,12 +171,12 @@ audio_init{cin >= 0; cout >= 0}(size_t cin, size_t cout, &env >> _) : audio(cin,
 
 
 fun {p:audioproc}{cin,cout:int}
-audio_run{cin >= 0; cout >= 0}(&audio(cin,cout,p)) : void
+audio_run{cin >= 0; cout >= 0}( !audio(cin,cout,p)) : void
 
 fun {p:audioproc}{cin,cout:int}
 audio_free{cin >= 0; cout >= 0}( audio(cin,cout,p) ) : void
 
-fun {} UN_audio_get_io{p:audioproc}{cin,cout:int}( &audio(cin,cout,p) ) 
+fun {} UN_audio_get_io{p:audioproc}{cin,cout:int}( !audio(cin,cout,p) ) 
   : audio_io(cin,cout) 
 
 fun {} 
@@ -214,6 +214,6 @@ audio_io_samples_out{cin,cout:nat}{t:nat}( aio: !audio_io(cin,cout), buf: !matri
 
 fun {p:audioproc}{cin,cout:int}
 audio_process{cin >= 0; cout >= 0}{t:nat}(
-  env : &audio(cin,cout,p), size_t t 
+  env : !audio(cin,cout,p), size_t t 
 ) : void
 

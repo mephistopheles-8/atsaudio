@@ -8,16 +8,19 @@
 #define ATSAUDIO_IO_DUMMY
 #include "./../mylibies.hats"
 
+(*
 local
   absreimpl audio
 in
-  fun {} print_audio{pr:audioproc}{cin,cout:nat}( audio0: !audio(cin,cout,pr) ) 
-    : void = {
-      val () = fprint_arrayptr<float>( stdout_ref, audio0.buffer, audio0.sin + audio0.sout )
-      val () = print_newline()
-    }
+  fun {} print_audio{pr:audioproc}{cin,cout:nat}( audio: !audio(cin,cout,pr) ) 
+    : void 
+      = case+ audio of 
+        | AUDIO(audio0) => {
+          val () = fprint_arrayptr<float>( stdout_ref, audio0.buffer, audio0.sin + audio0.sout )
+          val () = print_newline()
+        }
 end
- 
+ *)
 implement
 main0 ( ) 
   = println!("Hello [test02]") where {
@@ -76,7 +79,7 @@ main0 ( )
           audio$process<0><mono,stereo>( m ) = @(m,m)
         }
 
-      val () = print_audio( audio0 )
+      //val () = print_audio( audio0 )
       val () = audio_free<p><0,2>( audio0 )
   }
 
