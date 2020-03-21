@@ -32,15 +32,16 @@ test05: test05.dats ; $(PATSCC) $(PATSFLAGS) $(CFLAGS)  -o $@ $< $(LFLAGS_JACK)
 cleanall:: ; $(RMF) test05
 
 all:: test06
-test06: test06.dats ; $(PATSCC) $(PATSFLAGS) $(CFLAGS)  -o $@ $< $(LFLAGS_PORTAUDIO) 
+test06: test06.dats ; $(PATSCC) $(PATSFLAGS) $(CFLAGS) -Wno-incompatible-pointer-types  -o $@ $< $(LFLAGS_PORTAUDIO) 
 cleanall:: ; $(RMF) test06
 
+# This requires my SPSC library
 #all:: test07
 test07: test07.dats ; $(PATSCC) -D_SPSC_STDATOMIC $(PATSFLAGS) $(CFLAGS)  -o $@ $< $(LFLAGS_JACK) 
 cleanall:: ; $(RMF) test07
 
-#all:: test08
-test08: test08.dats ; $(PATSCC) $(PATSFLAGS) $(CFLAGS)  -o $@ $< $(LFLAGS_PORTAUDIO) 
+all:: test08
+test08: test08.dats ; $(PATSCC) $(PATSFLAGS) $(CFLAGS) -Wno-incompatible-pointer-types -o $@ $< $(LFLAGS_PORTAUDIO) 
 cleanall:: ; $(RMF) test08
 
 cleanall:: ; $(RMF) *_*ats.c
