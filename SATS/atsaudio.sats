@@ -184,8 +184,8 @@ audio_io_init{cin,cout:nat}(size_t cin, size_t cout) : audio_io(cin,cout)
 fun {}
 audio_io_free{cin,cout:nat}(audio_io(cin,cout)) : void
 
-fun {} audio_io_desired_sample_rate() : [n:nat] size_t n
-fun {} audio_io_desired_blocksize() : [n:nat] size_t n
+fun {} audio_io_desired_sample_rate() : [n:pos] size_t n
+fun {} audio_io_desired_blocksize() : [n:pos] size_t n
 
 fun {}
 audio_io_blocksize{cin,cout:nat}( aio: !audio_io(cin,cout) ) : [bsz:nat] size_t bsz
